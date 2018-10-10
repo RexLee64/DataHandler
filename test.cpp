@@ -18,6 +18,7 @@
 #include <netinet/udp.h>
 #include <linux/if_packet.h>
 #include <netinet/if_ether.h>
+#include <iostream>
 
 #define BUFF_SIZE 2048
 static const char *g_szIfName = "ens3f1np1"; // 网卡接口
@@ -31,6 +32,14 @@ typedef struct XdpPacketHeader
     unsigned long long mSendTime;
 } PacketHeader;
 
+typedef struct XdpMessageHeader
+{
+    unsigned short mMsgSize;
+    unsigned short mMsgType;
+} MessageHeader;
+
+void ProcessMessageHeader(char *buf, int msgCount);
+
 int main(int argc, char *argv[])
 {
     int sockfd;
@@ -42,7 +51,6 @@ int main(int argc, char *argv[])
     struct ethhdr *eth;
     struct iphdr *iph;
     struct udphdr *udph;
-    // UDP_HEADER *udph;
 
     sockfd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_IP));
     if (sockfd == -1)
@@ -77,7 +85,7 @@ int main(int argc, char *argv[])
     int i = 0;
     while (1)
     {
-        if (i++ == 204800)
+        if (i++ == 5)
             break;
         n = recvfrom(sockfd, buf, sizeof(buf), 0, NULL, NULL);
         if (n == -1)
@@ -100,66 +108,88 @@ int main(int argc, char *argv[])
         // }
         if (iph->protocol == IPPROTO_UDP)
         {
-
             udph = (struct udphdr *)(buf + sizeof(struct ethhdr) + sizeof(struct iphdr));
             char *packetPtr = buf + sizeof(struct ethhdr) + sizeof(struct iphdr) + sizeof(struct udphdr);
+            PacketHeader *hdr = (PacketHeader *)(packetPtr);
+            char *msgPtr = packetPtr + 16; // packet header len = 16bytes
             switch (ntohs(udph->dest))
             {
             case 51000:
-                PacketHeader *hdr = static_cast<PacketHeader *>(packetPtr);
-                printf("PktSize:%d,", hdr->mPktSize);
-                printf("MsgCount:%d,", hdr->mMsgCount);
+                printf("\n==================================================51000======================================================\n");
+                printf("Source:%s\n", inet_ntoa(*(struct in_addr *)&iph->saddr));
+                printf("Dest:%s\n", inet_ntoa(*(struct in_addr *)&iph->daddr));
+                printf("PktSize:%hu,", hdr->mPktSize);
+                printf("MsgCount:%hu,", hdr->mMsgCount);
                 printf("filler:%c,", hdr->mFiller);
-                printf("SeqNum:%d,", hdr->mSeqNum);
-                printf("sendTime:%lu\n", hdr->mSendTime);
+                printf("SeqNum:%lu,", hdr->mSeqNum);
+                printf("sendTime:%llu\n", hdr->mSendTime);
+                ProcessMessageHeader(msgPtr, hdr->mMsgCount);
                 break;
             case 51001:
-                PacketHeader *hdr = static_cast<PacketHeader *>(packetPtr);
-                printf("PktSize:%d,", hdr->mPktSize);
-                printf("MsgCount:%d,", hdr->mMsgCount);
+                printf("\n==================================================51001======================================================\n");
+                printf("Source:%s\n", inet_ntoa(*(struct in_addr *)&iph->saddr));
+                printf("Dest:%s\n", inet_ntoa(*(struct in_addr *)&iph->daddr));
+                printf("PktSize:%hu,", hdr->mPktSize);
+                printf("MsgCount:%hu,", hdr->mMsgCount);
                 printf("filler:%c,", hdr->mFiller);
-                printf("SeqNum:%d,", hdr->mSeqNum);
-                printf("sendTime:%lu\n", hdr->mSendTime);
+                printf("SeqNum:%lu,", hdr->mSeqNum);
+                printf("sendTime:%llu\n", hdr->mSendTime);
+                ProcessMessageHeader(msgPtr, hdr->mMsgCount);
                 break;
             case 51002:
-                PacketHeader *hdr = static_cast<PacketHeader *>(packetPtr);
-                printf("PktSize:%d,", hdr->mPktSize);
-                printf("MsgCount:%d,", hdr->mMsgCount);
+                printf("\n==================================================51002======================================================\n");
+                printf("Source:%s\n", inet_ntoa(*(struct in_addr *)&iph->saddr));
+                printf("Dest:%s\n", inet_ntoa(*(struct in_addr *)&iph->daddr));
+                printf("PktSize:%hu,", hdr->mPktSize);
+                printf("MsgCount:%hu,", hdr->mMsgCount);
                 printf("filler:%c,", hdr->mFiller);
-                printf("SeqNum:%d,", hdr->mSeqNum);
-                printf("sendTime:%lu\n", hdr->mSendTime);
+                printf("SeqNum:%lu,", hdr->mSeqNum);
+                printf("sendTime:%llu\n", hdr->mSendTime);
+                ProcessMessageHeader(msgPtr, hdr->mMsgCount);
                 break;
             case 51003:
-                PacketHeader *hdr = static_cast<PacketHeader *>(packetPtr);
-                printf("PktSize:%d,", hdr->mPktSize);
-                printf("MsgCount:%d,", hdr->mMsgCount);
+                printf("\n==================================================51003======================================================\n");
+                printf("Source:%s\n", inet_ntoa(*(struct in_addr *)&iph->saddr));
+                printf("Dest:%s\n", inet_ntoa(*(struct in_addr *)&iph->daddr));
+                printf("PktSize:%hu,", hdr->mPktSize);
+                printf("MsgCount:%hu,", hdr->mMsgCount);
                 printf("filler:%c,", hdr->mFiller);
-                printf("SeqNum:%d,", hdr->mSeqNum);
-                printf("sendTime:%lu\n", hdr->mSendTime);
+                printf("SeqNum:%lu,", hdr->mSeqNum);
+                printf("sendTime:%llu\n", hdr->mSendTime);
+                ProcessMessageHeader(msgPtr, hdr->mMsgCount);
                 break;
             case 51004:
-                PacketHeader *hdr = static_cast<PacketHeader *>(packetPtr);
-                printf("PktSize:%d,", hdr->mPktSize);
-                printf("MsgCount:%d,", hdr->mMsgCount);
+                printf("\n==================================================51004======================================================\n");
+                printf("Source:%s\n", inet_ntoa(*(struct in_addr *)&iph->saddr));
+                printf("Dest:%s\n", inet_ntoa(*(struct in_addr *)&iph->daddr));
+                printf("PktSize:%hu,", hdr->mPktSize);
+                printf("MsgCount:%hu,", hdr->mMsgCount);
                 printf("filler:%c,", hdr->mFiller);
-                printf("SeqNum:%d,", hdr->mSeqNum);
-                printf("sendTime:%lu\n", hdr->mSendTime);
+                printf("SeqNum:%lu,", hdr->mSeqNum);
+                printf("sendTime:%llu\n", hdr->mSendTime);
+                ProcessMessageHeader(msgPtr, hdr->mMsgCount);
                 break;
             case 51005:
-                PacketHeader *hdr = static_cast<PacketHeader *>(packetPtr);
-                printf("PktSize:%d,", hdr->mPktSize);
-                printf("MsgCount:%d,", hdr->mMsgCount);
+                printf("\n==================================================51005======================================================\n");
+                printf("Source:%s\n", inet_ntoa(*(struct in_addr *)&iph->saddr));
+                printf("Dest:%s\n", inet_ntoa(*(struct in_addr *)&iph->daddr));
+                printf("PktSize:%hu,", hdr->mPktSize);
+                printf("MsgCount:%hu,", hdr->mMsgCount);
                 printf("filler:%c,", hdr->mFiller);
-                printf("SeqNum:%d,", hdr->mSeqNum);
-                printf("sendTime:%lu\n", hdr->mSendTime);
+                printf("SeqNum:%lu,", hdr->mSeqNum);
+                printf("sendTime:%llu\n", hdr->mSendTime);
+                ProcessMessageHeader(msgPtr, hdr->mMsgCount);
                 break;
             case 51006:
-                PacketHeader *hdr = static_cast<PacketHeader *>(packetPtr);
-                printf("PktSize:%d,", hdr->mPktSize);
-                printf("MsgCount:%d,", hdr->mMsgCount);
+                printf("\n==================================================51006======================================================\n");
+                printf("Source:%s\n", inet_ntoa(*(struct in_addr *)&iph->saddr));
+                printf("Dest:%s\n", inet_ntoa(*(struct in_addr *)&iph->daddr));
+                printf("PktSize:%hu,", hdr->mPktSize);
+                printf("MsgCount:%hu,", hdr->mMsgCount);
                 printf("filler:%c,", hdr->mFiller);
-                printf("SeqNum:%d,", hdr->mSeqNum);
-                printf("sendTime:%lu\n", hdr->mSendTime);
+                printf("SeqNum:%lu,", hdr->mSeqNum);
+                printf("sendTime:%llu\n", hdr->mSendTime);
+                ProcessMessageHeader(msgPtr, hdr->mMsgCount);
                 break;
             }
 
@@ -181,4 +211,19 @@ int main(int argc, char *argv[])
     }
     close(sockfd);
     return 0;
+}
+
+void ProcessMessageHeader(char *buf, int msgCount)
+{
+    int n = 0;
+    int size = 0;
+    while (n < msgCount)
+    {
+        MessageHeader *msghdr = (MessageHeader *)buf;
+        printf("msg %d: msgsize=%d, msgtype=%d\n", n, msghdr->mMsgSize, msghdr->mMsgType);
+        n++;
+        buf = buf + msghdr->mMsgSize;
+        size += msghdr->mMsgSize;
+    }
+    printf("total size=%d\n", size + 16);
 }
