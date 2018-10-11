@@ -28,7 +28,7 @@ typedef struct XdpPacketHeader
     unsigned short mPktSize;
     unsigned char mMsgCount;
     unsigned char mFiller;
-    unsigned long mSeqNum;
+    unsigned int mSeqNum;
     unsigned long long mSendTime;
 } PacketHeader;
 
@@ -37,6 +37,18 @@ typedef struct XdpMessageHeader
     unsigned short mMsgSize;
     unsigned short mMsgType;
 } MessageHeader;
+
+typedef struct XdpAddOrder
+{ 
+    unsigned int mOrderbookID;
+    unsigned long long mOrderID;
+    int mPrice;
+    unsigned int mQuantity;
+    unsigned char mSide;
+    unsigned char mLotType;
+    unsigned short mOrderType;
+    unsigned int mOrderbookPosition;
+}AddOrder;
 
 void ProcessMessageHeader(char *buf, int msgCount);
 
@@ -51,7 +63,7 @@ int main(int argc, char *argv[])
     struct ethhdr *eth;
     struct iphdr *iph;
     struct udphdr *udph;
-
+    printf("%d,%d,%d,%d,%d\n",sizeof(unsigned short), sizeof(unsigned char),sizeof(unsigned int), sizeof(unsigned long), sizeof(unsigned long long)); 
     sockfd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_IP));
     if (sockfd == -1)
     {
@@ -85,7 +97,7 @@ int main(int argc, char *argv[])
     int i = 0;
     while (1)
     {
-        if (i++ == 5)
+        if (i++ == 10)
             break;
         n = recvfrom(sockfd, buf, sizeof(buf), 0, NULL, NULL);
         if (n == -1)
@@ -112,86 +124,113 @@ int main(int argc, char *argv[])
             char *packetPtr = buf + sizeof(struct ethhdr) + sizeof(struct iphdr) + sizeof(struct udphdr);
             PacketHeader *hdr = (PacketHeader *)(packetPtr);
             char *msgPtr = packetPtr + 16; // packet header len = 16bytes
-            switch (ntohs(udph->dest))
+            char *ip = inet_ntoa(*(struct in_addr *)&iph->daddr);
+            int port = ntohs(udph->dest);
+            if (hdr->mMsgCount > 0)
             {
-            case 51000:
-                printf("\n==================================================51000======================================================\n");
-                printf("Source:%s\n", inet_ntoa(*(struct in_addr *)&iph->saddr));
-                printf("Dest:%s\n", inet_ntoa(*(struct in_addr *)&iph->daddr));
-                printf("PktSize:%hu,", hdr->mPktSize);
-                printf("MsgCount:%hu,", hdr->mMsgCount);
-                printf("filler:%c,", hdr->mFiller);
-                printf("SeqNum:%lu,", hdr->mSeqNum);
-                printf("sendTime:%llu\n", hdr->mSendTime);
-                ProcessMessageHeader(msgPtr, hdr->mMsgCount);
-                break;
-            case 51001:
-                printf("\n==================================================51001======================================================\n");
-                printf("Source:%s\n", inet_ntoa(*(struct in_addr *)&iph->saddr));
-                printf("Dest:%s\n", inet_ntoa(*(struct in_addr *)&iph->daddr));
-                printf("PktSize:%hu,", hdr->mPktSize);
-                printf("MsgCount:%hu,", hdr->mMsgCount);
-                printf("filler:%c,", hdr->mFiller);
-                printf("SeqNum:%lu,", hdr->mSeqNum);
-                printf("sendTime:%llu\n", hdr->mSendTime);
-                ProcessMessageHeader(msgPtr, hdr->mMsgCount);
-                break;
-            case 51002:
-                printf("\n==================================================51002======================================================\n");
-                printf("Source:%s\n", inet_ntoa(*(struct in_addr *)&iph->saddr));
-                printf("Dest:%s\n", inet_ntoa(*(struct in_addr *)&iph->daddr));
-                printf("PktSize:%hu,", hdr->mPktSize);
-                printf("MsgCount:%hu,", hdr->mMsgCount);
-                printf("filler:%c,", hdr->mFiller);
-                printf("SeqNum:%lu,", hdr->mSeqNum);
-                printf("sendTime:%llu\n", hdr->mSendTime);
-                ProcessMessageHeader(msgPtr, hdr->mMsgCount);
-                break;
-            case 51003:
-                printf("\n==================================================51003======================================================\n");
-                printf("Source:%s\n", inet_ntoa(*(struct in_addr *)&iph->saddr));
-                printf("Dest:%s\n", inet_ntoa(*(struct in_addr *)&iph->daddr));
-                printf("PktSize:%hu,", hdr->mPktSize);
-                printf("MsgCount:%hu,", hdr->mMsgCount);
-                printf("filler:%c,", hdr->mFiller);
-                printf("SeqNum:%lu,", hdr->mSeqNum);
-                printf("sendTime:%llu\n", hdr->mSendTime);
-                ProcessMessageHeader(msgPtr, hdr->mMsgCount);
-                break;
-            case 51004:
-                printf("\n==================================================51004======================================================\n");
-                printf("Source:%s\n", inet_ntoa(*(struct in_addr *)&iph->saddr));
-                printf("Dest:%s\n", inet_ntoa(*(struct in_addr *)&iph->daddr));
-                printf("PktSize:%hu,", hdr->mPktSize);
-                printf("MsgCount:%hu,", hdr->mMsgCount);
-                printf("filler:%c,", hdr->mFiller);
-                printf("SeqNum:%lu,", hdr->mSeqNum);
-                printf("sendTime:%llu\n", hdr->mSendTime);
-                ProcessMessageHeader(msgPtr, hdr->mMsgCount);
-                break;
-            case 51005:
-                printf("\n==================================================51005======================================================\n");
-                printf("Source:%s\n", inet_ntoa(*(struct in_addr *)&iph->saddr));
-                printf("Dest:%s\n", inet_ntoa(*(struct in_addr *)&iph->daddr));
-                printf("PktSize:%hu,", hdr->mPktSize);
-                printf("MsgCount:%hu,", hdr->mMsgCount);
-                printf("filler:%c,", hdr->mFiller);
-                printf("SeqNum:%lu,", hdr->mSeqNum);
-                printf("sendTime:%llu\n", hdr->mSendTime);
-                ProcessMessageHeader(msgPtr, hdr->mMsgCount);
-                break;
-            case 51006:
-                printf("\n==================================================51006======================================================\n");
-                printf("Source:%s\n", inet_ntoa(*(struct in_addr *)&iph->saddr));
-                printf("Dest:%s\n", inet_ntoa(*(struct in_addr *)&iph->daddr));
-                printf("PktSize:%hu,", hdr->mPktSize);
-                printf("MsgCount:%hu,", hdr->mMsgCount);
-                printf("filler:%c,", hdr->mFiller);
-                printf("SeqNum:%lu,", hdr->mSeqNum);
-                printf("sendTime:%llu\n", hdr->mSendTime);
-                ProcessMessageHeader(msgPtr, hdr->mMsgCount);
-                break;
+                if (strcmp(ip, "239.1.127.130") == 0 && port == 51001)
+                {
+                    printf("\n==================================================channel id:121 239.1.127.130:51001======================================================\n");
+                    printf("PktSize:%hu,", hdr->mPktSize);
+                    printf("MsgCount:%hu,", hdr->mMsgCount);
+                    printf("SeqNum:%lu\n", hdr->mSeqNum);
+                    ProcessMessageHeader(msgPtr, hdr->mMsgCount);
+                }
+                if (strcmp(ip, "239.1.127.130") == 0 && port == 51002)
+                {
+                    printf("\n==================================================channel id:221 239.1.127.130:51002======================================================\n");
+                    printf("PktSize:%hu,", hdr->mPktSize);
+                    printf("MsgCount:%hu,", hdr->mMsgCount);
+                    printf("SeqNum:%lu\n", hdr->mSeqNum);
+                    ProcessMessageHeader(msgPtr, hdr->mMsgCount);
+                }
+                // if(strcmp(ip, "239.1.127.139") == 0 && port == 51000)
+                // {
+                //     printf("\n==================================================239.1.127.139:51000======================================================\n");
+                //     ProcessMessageHeader(msgPtr, hdr->mMsgCount);
+                // }
             }
+
+            // switch (ntohs(udph->dest))
+            // {
+            // case 51000:
+            //     printf("\n==================================================51000======================================================\n");
+            //     printf("Source:%s\n", inet_ntoa(*(struct in_addr *)&iph->saddr));
+            //     printf("Dest:%s\n", inet_ntoa(*(struct in_addr *)&iph->daddr));
+            //     printf("PktSize:%hu,", hdr->mPktSize);
+            //     printf("MsgCount:%hu,", hdr->mMsgCount);
+            //     printf("filler:%c,", hdr->mFiller);
+            //     printf("SeqNum:%lu,", hdr->mSeqNum);
+            //     printf("sendTime:%llu\n", hdr->mSendTime);
+            //     ProcessMessageHeader(msgPtr, hdr->mMsgCount);
+            //     break;
+            // case 51001:
+            //     printf("\n==================================================51001======================================================\n");
+            //     printf("Source:%s\n", inet_ntoa(*(struct in_addr *)&iph->saddr));
+            //     printf("Dest:%s\n", inet_ntoa(*(struct in_addr *)&iph->daddr));
+            //     printf("PktSize:%hu,", hdr->mPktSize);
+            //     printf("MsgCount:%hu,", hdr->mMsgCount);
+            //     printf("filler:%c,", hdr->mFiller);
+            //     printf("SeqNum:%lu,", hdr->mSeqNum);
+            //     printf("sendTime:%llu\n", hdr->mSendTime);
+            //     ProcessMessageHeader(msgPtr, hdr->mMsgCount);
+            //     break;
+            // case 51002:
+            //     printf("\n==================================================51002======================================================\n");
+            //     printf("Source:%s\n", inet_ntoa(*(struct in_addr *)&iph->saddr));
+            //     printf("Dest:%s\n", inet_ntoa(*(struct in_addr *)&iph->daddr));
+            //     printf("PktSize:%hu,", hdr->mPktSize);
+            //     printf("MsgCount:%hu,", hdr->mMsgCount);
+            //     printf("filler:%c,", hdr->mFiller);
+            //     printf("SeqNum:%lu,", hdr->mSeqNum);
+            //     printf("sendTime:%llu\n", hdr->mSendTime);
+            //     ProcessMessageHeader(msgPtr, hdr->mMsgCount);
+            //     break;
+            // case 51003:
+            //     printf("\n==================================================51003======================================================\n");
+            //     printf("Source:%s\n", inet_ntoa(*(struct in_addr *)&iph->saddr));
+            //     printf("Dest:%s\n", inet_ntoa(*(struct in_addr *)&iph->daddr));
+            //     printf("PktSize:%hu,", hdr->mPktSize);
+            //     printf("MsgCount:%hu,", hdr->mMsgCount);
+            //     printf("filler:%c,", hdr->mFiller);
+            //     printf("SeqNum:%lu,", hdr->mSeqNum);
+            //     printf("sendTime:%llu\n", hdr->mSendTime);
+            //     ProcessMessageHeader(msgPtr, hdr->mMsgCount);
+            //     break;
+            // case 51004:
+            //     printf("\n==================================================51004======================================================\n");
+            //     printf("Source:%s\n", inet_ntoa(*(struct in_addr *)&iph->saddr));
+            //     printf("Dest:%s\n", inet_ntoa(*(struct in_addr *)&iph->daddr));
+            //     printf("PktSize:%hu,", hdr->mPktSize);
+            //     printf("MsgCount:%hu,", hdr->mMsgCount);
+            //     printf("filler:%c,", hdr->mFiller);
+            //     printf("SeqNum:%lu,", hdr->mSeqNum);
+            //     printf("sendTime:%llu\n", hdr->mSendTime);
+            //     ProcessMessageHeader(msgPtr, hdr->mMsgCount);
+            //     break;
+            // case 51005:
+            //     printf("\n==================================================51005======================================================\n");
+            //     printf("Source:%s\n", inet_ntoa(*(struct in_addr *)&iph->saddr));
+            //     printf("Dest:%s\n", inet_ntoa(*(struct in_addr *)&iph->daddr));
+            //     printf("PktSize:%hu,", hdr->mPktSize);
+            //     printf("MsgCount:%hu,", hdr->mMsgCount);
+            //     printf("filler:%c,", hdr->mFiller);
+            //     printf("SeqNum:%lu,", hdr->mSeqNum);
+            //     printf("sendTime:%llu\n", hdr->mSendTime);
+            //     ProcessMessageHeader(msgPtr, hdr->mMsgCount);
+            //     break;
+            // case 51006:
+            //     printf("\n==================================================51006======================================================\n");
+            //     printf("Source:%s\n", inet_ntoa(*(struct in_addr *)&iph->saddr));
+            //     printf("Dest:%s\n", inet_ntoa(*(struct in_addr *)&iph->daddr));
+            //     printf("PktSize:%hu,", hdr->mPktSize);
+            //     printf("MsgCount:%hu,", hdr->mMsgCount);
+            //     printf("filler:%c,", hdr->mFiller);
+            //     printf("SeqNum:%lu,", hdr->mSeqNum);
+            //     printf("sendTime:%llu\n", hdr->mSendTime);
+            //     ProcessMessageHeader(msgPtr, hdr->mMsgCount);
+            //     break;
+            // }
 
             // printf("Dest MAC addr:%02x:%02x:%02x:%02x:%02x:%02x\n", eth->h_dest[0], eth->h_dest[1], eth->h_dest[2], eth->h_dest[3], eth->h_dest[4], eth->h_dest[5]);
             // printf("Source MAC addr:%02x:%02x:%02x:%02x:%02x:%02x\n", eth->h_source[0], eth->h_source[1], eth->h_source[2], eth->h_source[3], eth->h_source[4], eth->h_source[5]);
