@@ -14,6 +14,7 @@ class XdpBaseData
         mBufferLength = length;
         mOffset = offset;
     }
+    public:
 };
 
 #endif
