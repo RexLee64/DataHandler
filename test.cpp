@@ -134,22 +134,22 @@ int main(int argc, char *argv[])
             int port = ntohs(udph->dest);
             if (hdr->mMsgCount > 0)
             {
-                if (strcmp(ip, "239.1.127.130") == 0 && port == 51001)
-                {
-                    printf("\n==================================================channel id:121 239.1.127.130:51001======================================================\n");
-                    printf("PktSize:%hu,", hdr->mPktSize);
-                    printf("MsgCount:%hu,", hdr->mMsgCount);
-                    printf("SeqNum:%lu\n", hdr->mSeqNum);
-                    ProcessMessageHeader(msgPtr, hdr->mMsgCount);
-                }
-                if (strcmp(ip, "239.1.127.130") == 0 && port == 51002)
-                {
-                    printf("\n==================================================channel id:221 239.1.127.130:51002======================================================\n");
-                    printf("PktSize:%hu,", hdr->mPktSize);
-                    printf("MsgCount:%hu,", hdr->mMsgCount);
-                    printf("SeqNum:%lu\n", hdr->mSeqNum);
-                    ProcessMessageHeader(msgPtr, hdr->mMsgCount);
-                }
+                // if (strcmp(ip, "239.1.127.130") == 0 && port == 51001)
+                // {
+                //     printf("\n==================================================channel id:121 239.1.127.130:51001======================================================\n");
+                //     printf("PktSize:%hu,", hdr->mPktSize);
+                //     printf("MsgCount:%hu,", hdr->mMsgCount);
+                //     printf("SeqNum:%lu\n", hdr->mSeqNum);
+                //     ProcessMessageHeader(msgPtr, hdr->mMsgCount);
+                // }
+                // if (strcmp(ip, "239.1.127.130") == 0 && port == 51002)
+                // {
+                //     printf("\n==================================================channel id:221 239.1.127.130:51002======================================================\n");
+                //     printf("PktSize:%hu,", hdr->mPktSize);
+                //     printf("MsgCount:%hu,", hdr->mMsgCount);
+                //     printf("SeqNum:%lu\n", hdr->mSeqNum);
+                //     ProcessMessageHeader(msgPtr, hdr->mMsgCount);
+                // }
                 // if(strcmp(ip, "239.1.127.139") == 0 && port == 51000)
                 // {
                 //     printf("\n==================================================239.1.127.139:51000======================================================\n");
