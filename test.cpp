@@ -4,6 +4,7 @@
  * @Last Modified by:  
  * @Last Modified time: 2018-09-28 16:42:05
  */
+#include "test.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -19,6 +20,7 @@
 #include <linux/if_packet.h>
 #include <netinet/if_ether.h>
 #include <iostream>
+#include "OrderBook.h"
 
 #define BUFF_SIZE 2048
 static const char *g_szIfName = "ens3f1np1"; // 网卡接口
@@ -36,21 +38,24 @@ typedef struct XdpMessageHeader
 {
     unsigned short mMsgSize;
     unsigned short mMsgType;
-} MessageHeader;
+} MessageHeader; 
 
-typedef struct XdpAddOrder
-{ 
-    unsigned int mOrderbookID;
-    unsigned long long mOrderID;
-    int mPrice;
-    unsigned int mQuantity;
-    unsigned char mSide;
-    unsigned char mLotType;
-    unsigned short mOrderType;
-    unsigned int mOrderbookPosition;
-}AddOrder;
+    // 增加/修改订单
+    //     typedef struct XdpAddModOrder
+    // {
+    //     unsigned int mOrderbookID;
+    //     unsigned long long mOrderID;
+    //     int mPrice;
+    //     unsigned int mQuantity;
+    //     unsigned char mSide;
+    //     unsigned char mLotType;
+    //     unsigned short mOrderType;
+    //     unsigned int mOrderbookPosition;
+    // } AddModOrder;
+ 
 
 void ProcessMessageHeader(char *buf, int msgCount);
+void AddOrder(char *buf, uint16_t offset, uint16_t len);
 
 int main(int argc, char *argv[])
 {
@@ -63,7 +68,7 @@ int main(int argc, char *argv[])
     struct ethhdr *eth;
     struct iphdr *iph;
     struct udphdr *udph;
-    printf("%d,%d,%d,%d,%d\n",sizeof(unsigned short), sizeof(unsigned char),sizeof(unsigned int), sizeof(unsigned long), sizeof(unsigned long long)); 
+    printf("%d,%d,%d,%d,%d\n", sizeof(unsigned short), sizeof(unsigned char), sizeof(unsigned int), sizeof(unsigned long), sizeof(unsigned long long));
     sockfd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_IP));
     if (sockfd == -1)
     {
@@ -77,6 +82,7 @@ int main(int argc, char *argv[])
         close(sockfd);
         return -1;
     }
+
     // ifr.ifr_flags |= IFF_PROMISC;
     // if(ioctl(sockfd, SIOCSIFFLAGS, &ifr) == -1) // 网卡设置混杂模式
     // {
@@ -260,9 +266,27 @@ void ProcessMessageHeader(char *buf, int msgCount)
     {
         MessageHeader *msghdr = (MessageHeader *)buf;
         printf("msg %d: msgsize=%d, msgtype=%d\n", n, msghdr->mMsgSize, msghdr->mMsgType);
+        if (msghdr->mMsgType == ADDORDER)
+        {
+            AddOrder(buf, 4, msghdr->mMsgSize);
+        }
         n++;
         buf = buf + msghdr->mMsgSize;
         size += msghdr->mMsgSize;
     }
     printf("total size=%d\n", size + 16);
+}
+
+void AddOrder(char *buf, uint16_t offset, uint16_t len)
+{
+    XdpAddModOrder addOrder(buf, len, offset);
+    printf("OrderbookID:%u\n", addOrder.orderBookId());
+    printf("OrderID:%llu\n", addOrder.orderId());
+    printf("price:%d\n", addOrder.price());
+    printf("quantity:%u\n", addOrder.quantity());
+    printf("side:%hu\n", addOrder.side());
+    printf("lotType:%d\n", addOrder.lotType());
+    printf("OrderType:%d\n", addOrder.orderType());
+    printf("orderBookPosition:%u\n\n", addOrder.orderBookPosition());
+
 }
