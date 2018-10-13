@@ -1,6 +1,7 @@
 #ifndef ORDERBOOK_H
 #define ORDERBOOK_H
 #include <iostream>
+#include "BaseData.h"
 
 class XdpAddModOrder : public XdpBaseData
 {
