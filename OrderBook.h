@@ -2,14 +2,11 @@
 #define ORDERBOOK_H
 #include <iostream>
 
-class XdpAddModOrder : public BaseData
+class XdpAddModOrder : public XdpBaseData
 {
   public:
-    XdpAddModOrder() : mBuffer(nullptr), mOffset(0) {}
-    XdpAddModOrder(char *buffer, const uint16_t length, const uint16_t offset = 0)
-    {
-        reset(buffer, length, offset);
-    }
+    XdpAddModOrder() {}
+    XdpAddModOrder(char *buffer, const uint16_t length, const uint16_t offset = 0) : XdpBaseData(buffer, length, offset) {}
     // XdpAddModOrder(char *buffer, const uint16_t length, const uint16_t offset)
     // {
     //     reset(buffer, length, 0);

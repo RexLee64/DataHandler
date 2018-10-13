@@ -1,6 +1,7 @@
 #ifndef BASEDTA_H
 #define BASEDTA_H
-
+#include <iostream>
+#include "OrderBook.h"
 class XdpBaseData
 {
   protected:
@@ -14,7 +15,13 @@ class XdpBaseData
         mBufferLength = length;
         mOffset = offset;
     }
-    public:
+
+  public:
+    XdpBaseData() : mBuffer(nullptr), mBufferLength(0), mOffset(0) {}
+    XdpBaseData(char *buffer, const uint16_t length, const uint16_t offset = 0)
+    {
+        reset(buffer, length, offset);
+    }
 };
 
 #endif
