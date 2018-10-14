@@ -1,6 +1,5 @@
-#ifndef ORDERBOOK_H
-#define ORDERBOOK_H
-#include <iostream>
+#ifndef ORDERBOOKDATA_H
+#define ORDERBOOKDATA_H 
 #include "BaseData.h"
 
 class XdpAddModOrder : public XdpBaseData
@@ -12,7 +11,7 @@ class XdpAddModOrder : public XdpBaseData
     // {
     //     reset(buffer, length, 0);
     // }
-    uint32_t orderBookId()
+    uint32_t orderbookId()
     {
         uint32_t val;
         memcpy(&val, mBuffer + mOffset, sizeof(uint32_t));
@@ -54,12 +53,53 @@ class XdpAddModOrder : public XdpBaseData
         memcpy(&val, mBuffer + mOffset + 22, sizeof(uint16_t));
         return val;
     }
-    uint32_t orderBookPosition()
+    uint32_t orderbookPosition()
     {
         uint32_t val;
         memcpy(&val, mBuffer + mOffset + 24, sizeof(uint32_t));
         return val;
     }
 };
+
+class XdpDeleteOrder : public XdpBaseData
+{
+  public:
+    XdpDeleteOrder() {}
+    XdpDeleteOrder(char *buffer, const uint16_t length, const uint16_t offset = 0) : XdpBaseData(buffer, length, offset) {}
+
+    uint32_t orderbookId()
+    {
+        uint32_t val;
+        memcpy(&val, mBuffer + mOffset, sizeof(uint32_t));
+        return val;
+    }
+    uint64_t orderId()
+    {
+        uint64_t val;
+        memcpy(&val, mBuffer + mOffset, sizeof(uint64_t));
+        return val;
+    }
+    uint8_t side()
+    {
+        uint8_t val;
+        memcpy(&val, mBuffer + mOffset, sizeof(uint8_t));
+        return val;
+    }
+};
+
+class XdpClearOrder : public XdpBaseData
+{
+  public:
+    XdpClearOrder() {}
+    XdpClearOrder(char *buffer, const uint16_t length, const uint16_t offset = 0) : XdpBaseData(buffer, length, offset) {}
+
+    uint32_t orderbookId()
+    {
+        uint32_t val;
+        memcpy(&val, mBuffer + mOffset, sizeof(uint32_t));
+        return val;
+    }
+};
+
 
 #endif

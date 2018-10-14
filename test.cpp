@@ -287,6 +287,6 @@ void AddOrder(char *buf, uint16_t offset, uint16_t len)
     printf("side:%hu\n", addOrder.side());
     printf("lotType:%d\n", addOrder.lotType());
     printf("OrderType:%d\n", addOrder.orderType());
-    printf("orderBookPosition:%u\n\n", addOrder.orderBookPosition());
+    printf("orderBookPosition:%u\n\n", addOrder.orderbookPosition());
 
 }

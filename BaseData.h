@@ -1,7 +1,7 @@
 #ifndef BASEDTA_H
 #define BASEDTA_H
 #include <iostream>
-
+#include <string> 
 class XdpBaseData
 {
   protected:
@@ -17,7 +17,7 @@ class XdpBaseData
     }
 
   public:
-    XdpBaseData() : mBuffer(nullptr), mBufferLength(0), mOffset(0) {}
+    XdpBaseData() : mBuffer(nullptr), mBufferLength(0), mOffset(0) {}  
     XdpBaseData(char *buffer, const uint16_t length, const uint16_t offset = 0)
     {
         reset(buffer, length, offset);
