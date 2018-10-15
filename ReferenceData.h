@@ -19,16 +19,14 @@ class XdpCommodityDefinition : public XdpBaseData
         memcpy(&val, mBuffer + mOffset + 2, sizeof(uint16_t));
         return val;
     }
-    string isinCode()
+    std::string isinCode()
     {
-        string val;
-        memcpy(&val, mBuffer + mOffset + 4, sizeof(string));
+        std::string val(mBuffer + mOffset + 4, 12);
         return val;
     }
-    string baseCurrency()
+    std::string baseCurrency()
     {
-        string val;
-        memcpy(&val, mBuffer + mOffset + 16, sizeof(string));
+        std::string val(mBuffer + mOffset + 16, 3);
         return val;
     }
     uint8_t underlyingPriceUnit()
@@ -37,10 +35,9 @@ class XdpCommodityDefinition : public XdpBaseData
         memcpy(&val, mBuffer + mOffset + 19, sizeof(uint8_t));
         return val;
     }
-    string commodityName()
+    std::string commodityName()
     {
-        string val;
-        memcpy(&val, mBuffer + mOffset + 20, sizeof(string));
+        std::string val(mBuffer + mOffset + 20, 32);
         return val;
     }
     int64_t nominalValue()
@@ -49,10 +46,9 @@ class XdpCommodityDefinition : public XdpBaseData
         memcpy(&val, mBuffer + mOffset + 52, sizeof(int64_t));
         return val;
     }
-    string underlyingCode()
+    std::string underlyingCode()
     {
-        string val;
-        memcpy(&val, mBuffer + mOffset + 60, sizeof(string));
+        std::string val(mBuffer + mOffset + 60, 20);
         return val;
     }
     uint8_t underlyingType()
@@ -67,10 +63,10 @@ class XdpCommodityDefinition : public XdpBaseData
         memcpy(&val, mBuffer + mOffset + 81, sizeof(uint8_t));
         return val;
     }
-    string commodityId()
+    std::string commodityId()
     {
-        string val;
-        memcpy(&val, mBuffer + mOffset + 82, sizeof(string));
+        std::string val(mBuffer + mOffset + 82, 6);
+        // printf("%d,%s\n",mOffset,mBuffer + mOffset + 82);
         return val;
     }
 };
@@ -158,34 +154,29 @@ class XdpClassDefinition : public XdpBaseData
         memcpy(&val, mBuffer + mOffset + 25, sizeof(uint8_t));
         return val;
     }
-    string baseCurrency()
+    std::string baseCurrency()
     {
-        string val;
-        memcpy(&val, mBuffer + mOffset + 26, sizeof(string));
+        std::string val(mBuffer + mOffset + 26, 3);
         return val;
     }
-    string instrumentClassID()
+    std::string instrumentClassID()
     {
-        string val;
-        memcpy(&val, mBuffer + mOffset + 29, sizeof(string));
+        std::string val(mBuffer + mOffset + 29, 14);
         return val;
     }
-    string instrumentClassName()
+    std::string instrumentClassName()
     {
-        string val;
-        memcpy(&val, mBuffer + mOffset + 43, sizeof(string));
+        std::string val(mBuffer + mOffset + 43, 32);
         return val;
     }
-    string isFractions()
+    std::string isFractions()
     {
-        string val;
-        memcpy(&val, mBuffer + mOffset + 75, sizeof(string));
+        std::string val(mBuffer + mOffset + 75, 1);
         return val;
     }
-    string settlementCurrencyID()
+    std::string settlementCurrencyID()
     {
-        string val;
-        memcpy(&val, mBuffer + mOffset + 76, sizeof(string));
+        std::string val(mBuffer + mOffset + 76, 32);
         return val;
     }
     uint8_t effectiveTomorrow()
@@ -213,10 +204,9 @@ class XdpSeriesDefinitionBase : public XdpBaseData
         memcpy(&val, mBuffer + mOffset, sizeof(uint32_t));
         return val;
     }
-    string symbol()
+    std::string symbol()
     {
-        string val;
-        memcpy(&val, mBuffer + mOffset + 4, sizeof(string));
+        std::string val(mBuffer + mOffset + 4, 32);
         return val;
     }
     uint8_t financialProduct()
@@ -243,10 +233,9 @@ class XdpSeriesDefinitionBase : public XdpBaseData
         memcpy(&val, mBuffer + mOffset + 40, sizeof(uint32_t));
         return val;
     }
-    string expirationDate()
+    std::string expirationDate()
     {
-        string val;
-        memcpy(&val, mBuffer + mOffset + 44, sizeof(string));
+        std::string val(mBuffer + mOffset + 44, 8);
         return val;
     }
     uint8_t putOrCall()
@@ -262,16 +251,15 @@ class XdpSeriesDefinitionExtented : public XdpBaseData
   public:
     XdpSeriesDefinitionExtented() {}
     XdpSeriesDefinitionExtented(char *buffer, const uint16_t length, const uint16_t offset) : XdpBaseData(buffer, length, offset) {}
-    uint32_t orderbookID()
+    uint32_t orderbookId()
     {
         uint32_t val;
         memcpy(&val, mBuffer + mOffset, sizeof(uint32_t));
         return val;
     }
-    string symbol()
+    std::string symbol()
     {
-        string val;
-        memcpy(&val, mBuffer + mOffset + 4, sizeof(string));
+        std::string val(mBuffer + mOffset + 4, 32);
         return val;
     }
     uint8_t country()
@@ -322,10 +310,9 @@ class XdpSeriesDefinitionExtented : public XdpBaseData
         memcpy(&val, mBuffer + mOffset + 48, sizeof(int64_t));
         return val;
     }
-    string isinCode()
+    std::string isinCode()
     {
-        string val;
-        memcpy(&val, mBuffer + mOffset + 56, sizeof(string));
+        std::string val(mBuffer + mOffset + 56, 12);
         return val;
     }
     uint8_t seriesStatus()
@@ -346,13 +333,12 @@ class XdpSeriesDefinitionExtented : public XdpBaseData
         memcpy(&val, mBuffer + mOffset + 70, sizeof(int32_t));
         return val;
     }
-    string effectiveExpDate()
+    std::string effectiveExpDate()
     {
-        string val;
-        memcpy(&val, mBuffer + mOffset + 76, sizeof(string));
+        std::string val(mBuffer + mOffset + 76, 8);
         return val;
     }
-    int64_t contractSize()
+    int64_t dateTimeLastTrading()
     {
         int64_t val;
         memcpy(&val, mBuffer + mOffset + 84, sizeof(int64_t));
@@ -377,13 +363,12 @@ class XdpCombinationDefinition : public XdpBaseData
         memcpy(&val, mBuffer + mOffset + 4, sizeof(uint32_t));
         return val;
     }
-    string legSide()
+    std::string legSide()
     {
-        string val;
-        memcpy(&val, mBuffer + mOffset + 11, sizeof(string));
+        std::string val(mBuffer + mOffset + 11, 1);
         return val;
     }
-    int32_t legOrderbookId()
+    int32_t legRatio()
     {
         int32_t val;
         memcpy(&val, mBuffer + mOffset + 12, sizeof(int32_t));

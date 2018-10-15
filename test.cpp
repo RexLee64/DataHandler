@@ -20,7 +20,8 @@
 #include <linux/if_packet.h>
 #include <netinet/if_ether.h>
 #include <iostream>
-#include "OrderBook.h"
+#include "OrderbookData.h"
+#include "TradeData.h"
 
 #define BUFF_SIZE 2048
 static const char *g_szIfName = "ens3f1np1"; // 网卡接口
@@ -38,21 +39,20 @@ typedef struct XdpMessageHeader
 {
     unsigned short mMsgSize;
     unsigned short mMsgType;
-} MessageHeader; 
+} MessageHeader;
 
-    // 增加/修改订单
-    //     typedef struct XdpAddModOrder
-    // {
-    //     unsigned int mOrderbookID;
-    //     unsigned long long mOrderID;
-    //     int mPrice;
-    //     unsigned int mQuantity;
-    //     unsigned char mSide;
-    //     unsigned char mLotType;
-    //     unsigned short mOrderType;
-    //     unsigned int mOrderbookPosition;
-    // } AddModOrder;
- 
+// 增加/修改订单
+//     typedef struct XdpAddModOrder
+// {
+//     unsigned int mOrderbookID;
+//     unsigned long long mOrderID;
+//     int mPrice;
+//     unsigned int mQuantity;
+//     unsigned char mSide;
+//     unsigned char mLotType;
+//     unsigned short mOrderType;
+//     unsigned int mOrderbookPosition;
+// } AddModOrder;
 
 void ProcessMessageHeader(char *buf, int msgCount);
 void AddOrder(char *buf, uint16_t offset, uint16_t len);
@@ -103,8 +103,8 @@ int main(int argc, char *argv[])
     int i = 0;
     while (1)
     {
-        if (i++ == 10)
-            break;
+        // if (i++ == 10)
+        //     break;
         n = recvfrom(sockfd, buf, sizeof(buf), 0, NULL, NULL);
         if (n == -1)
         {
@@ -134,6 +134,11 @@ int main(int argc, char *argv[])
             int port = ntohs(udph->dest);
             if (hdr->mMsgCount > 0)
             {
+                printf("%s:%d\n", ip, port);
+                printf("PktSize:%hu,", hdr->mPktSize);
+                printf("MsgCount:%hu,", hdr->mMsgCount);
+                printf("SeqNum:%lu\n", hdr->mSeqNum);
+                ProcessMessageHeader(msgPtr, hdr->mMsgCount);
                 // if (strcmp(ip, "239.1.127.130") == 0 && port == 51001)
                 // {
                 //     printf("\n==================================================channel id:121 239.1.127.130:51001======================================================\n");
@@ -266,9 +271,13 @@ void ProcessMessageHeader(char *buf, int msgCount)
     {
         MessageHeader *msghdr = (MessageHeader *)buf;
         printf("msg %d: msgsize=%d, msgtype=%d\n", n, msghdr->mMsgSize, msghdr->mMsgType);
+        // if (msghdr->mMsgType == ADDORDER)
+        // {
+        //     AddOrder(buf, 4, msghdr->mMsgSize);
+        // }
         if (msghdr->mMsgType == ADDORDER)
         {
-            AddOrder(buf, 4, msghdr->mMsgSize);
+            printf("Trade\n");
         }
         n++;
         buf = buf + msghdr->mMsgSize;
@@ -280,7 +289,7 @@ void ProcessMessageHeader(char *buf, int msgCount)
 void AddOrder(char *buf, uint16_t offset, uint16_t len)
 {
     XdpAddModOrder addOrder(buf, len, offset);
-    printf("OrderbookID:%u\n", addOrder.orderBookId());
+    printf("OrderbookID:%u\n", addOrder.orderbookId());
     printf("OrderID:%llu\n", addOrder.orderId());
     printf("price:%d\n", addOrder.price());
     printf("quantity:%u\n", addOrder.quantity());
@@ -288,5 +297,4 @@ void AddOrder(char *buf, uint16_t offset, uint16_t len)
     printf("lotType:%d\n", addOrder.lotType());
     printf("OrderType:%d\n", addOrder.orderType());
     printf("orderBookPosition:%u\n\n", addOrder.orderbookPosition());
-
 }

@@ -27,13 +27,13 @@ class XdpTrade : public XdpBaseData
         memcpy(&val, mBuffer + mOffset + 12, sizeof(int32_t));
         return val;
     }
-    uint64_t tradeID()
+    uint64_t tradeId()
     {
         uint64_t val;
         memcpy(&val, mBuffer + mOffset + 16, sizeof(uint64_t));
         return val;
     }
-    uint32_t comboGroupID()
+    uint32_t comboGroupId()
     {
         uint32_t val;
         memcpy(&val, mBuffer + mOffset + 24, sizeof(uint32_t));
@@ -88,7 +88,7 @@ class XdpTradeAmendment : public XdpBaseData
         memcpy(&val, mBuffer + mOffset, sizeof(uint64_t));
         return val;
     }
-    uint32_t comboGroupID()
+    uint32_t comboGroupId()
     {
         uint32_t val;
         memcpy(&val, mBuffer + mOffset + 8, sizeof(uint32_t));

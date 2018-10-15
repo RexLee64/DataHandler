@@ -37,28 +37,24 @@ class XdpMarketStatus : public XdpBaseData
         memcpy(&val, mBuffer + mOffset + 8, sizeof(uint16_t));
         return val;
     }
-    string actualStartDate()
+    std::string actualStartDate()
     {
-        string val;
-        memcpy(&val, mBuffer + mOffset + 12, sizeof(string));
+        std::string val(mBuffer + mOffset + 12, 8);
         return val;
     }
-    string actualStartTime()
+    std::string actualStartTime()
     {
-        string val;
-        memcpy(&val, mBuffer + mOffset + 20, sizeof(string));
+        std::string val(mBuffer + mOffset + 20, 6);
         return val;
     }
-    string plannedStartDate()
+    std::string plannedStartDate()
     {
-        string val;
-        memcpy(&val, mBuffer + mOffset + 26, sizeof(string));
+        std::string val(mBuffer + mOffset + 26, 8);
         return val;
     }
-    string plannedStartTime()
+    std::string plannedStartTime()
     {
-        string val;
-        memcpy(&val, mBuffer + mOffset + 34, sizeof(string));
+        std::string val(mBuffer + mOffset + 34, 6);
         return val;
     }
     uint16_t secondsToStateChange()
@@ -92,10 +88,9 @@ class XdpSeriesStatus : public XdpBaseData
         memcpy(&val, mBuffer + mOffset, sizeof(uint32_t));
         return val;
     }
-    string suspended()
+    std::string suspended()
     {
-        string val;
-        memcpy(&val, mBuffer + mOffset + 4, sizeof(string));
+        std::string val(mBuffer + mOffset + 4, 1);
         return val;
     }
 };
@@ -111,10 +106,9 @@ class XdpCommodityStatus : public XdpBaseData
         memcpy(&val, mBuffer + mOffset, sizeof(uint16_t));
         return val;
     }
-    string suspended()
+    std::string suspended()
     {
-        string val;
-        memcpy(&val, mBuffer + mOffset + 2, sizeof(string));
+        std::string val(mBuffer + mOffset + 2, 1);
         return val;
     }
 };

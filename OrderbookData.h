@@ -1,5 +1,5 @@
 #ifndef ORDERBOOKDATA_H
-#define ORDERBOOKDATA_H 
+#define ORDERBOOKDATA_H
 #include "BaseData.h"
 
 class XdpAddModOrder : public XdpBaseData
@@ -100,6 +100,5 @@ class XdpClearOrder : public XdpBaseData
         return val;
     }
 };
-
 
 #endif
