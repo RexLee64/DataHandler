@@ -66,7 +66,6 @@ class XdpCommodityDefinition : public XdpBaseData
     std::string commodityId()
     {
         std::string val(mBuffer + mOffset + 82, 6);
-        // printf("%d,%s\n",mOffset,mBuffer + mOffset + 82);
         return val;
     }
 };
