@@ -26,8 +26,8 @@ static const char *g_szIfName = "ens3f1np1"; // 网卡接口
 void ProcessMessageHeader(char *buf, int msgCount, int id);
 void AddOrder(char *buf, uint16_t offset, uint16_t len);
 void Trade(char *buf, uint16_t offset, uint16_t len);
-void CommodityDefinition(char *buf, uint16_t offset, uint16_t len);
-void SeriesDefinitionExtended(char *buf, uint16_t offset, uint16_t len);
+void CommodityDefinition(char *buf, uint16_t offset, uint16_t len, int id);
+void SeriesDefinitionExtended(char *buf, uint16_t offset, uint16_t len, int id);
 void SeriesDefinitionBase(char *buf, uint16_t offset, uint16_t len);
 void ClassDefinition(char *buf, uint16_t offset, uint16_t len);
 std::string trim(std::string s);
