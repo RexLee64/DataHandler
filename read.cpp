@@ -49,6 +49,7 @@ void CommodityDefinition(char *buf, uint16_t offset, uint16_t len);
 void SeriesDefinitionExtended(char *buf, uint16_t offset, uint16_t len);
 void SeriesDefinitionBase(char *buf, uint16_t offset, uint16_t len);
 void ClassDefinition(char *buf, uint16_t offset, uint16_t len);
+std::string trim(std::string s);
 
 int main(int argc, char *argv[])
 {
@@ -128,6 +129,18 @@ int main(int argc, char *argv[])
     return 0;
 }
 
+std::string trim(std::string s)
+{
+
+    if (!s.empty())
+    {
+        s.erase(0, s.find_first_not_of(" "));
+        s.erase(s.find_last_not_of(" ") + 1);
+    }
+
+    return s;
+}
+
 void ProcessMessageHeader(char *buf, int msgCount)
 {
     int n = 0;
@@ -149,13 +162,17 @@ void ProcessMessageHeader(char *buf, int msgCount)
         // {
         //     CommodityDefinition(buf, 4, msghdr->mMsgSize);
         // }
-        if (msghdr->mMsgType == CLASSDEFINITION)
-        {
-            ClassDefinition(buf, 4, msghdr->mMsgSize);
-        }
-        // if (msghdr->mMsgType == SERIESDEFINITIONEXTENDED)
+        // if (msghdr->mMsgType == CLASSDEFINITION)
         // {
-        //     SeriesDefinitionExtended(buf, 4, msghdr->mMsgSize);
+        //     ClassDefinition(buf, 4, msghdr->mMsgSize);
+        // }
+        if (msghdr->mMsgType == SERIESDEFINITIONEXTENDED)
+        {
+            SeriesDefinitionExtended(buf, 4, msghdr->mMsgSize);
+        }
+        // if (msghdr->mMsgType == SERIESDEFINITIONBASE)
+        // {
+        //     SeriesDefinitionBase(buf, 4, msghdr->mMsgSize);
         // }
         n++;
         buf = buf + msghdr->mMsgSize;
@@ -167,14 +184,17 @@ void ProcessMessageHeader(char *buf, int msgCount)
 void AddOrder(char *buf, uint16_t offset, uint16_t len)
 {
     XdpAddModOrder addOrder(buf, len, offset);
-    printf("OrderbookID:%u\n", addOrder.orderbookId());
-    printf("OrderID:%llu\n", addOrder.orderId());
-    printf("price:%d\n", addOrder.price());
-    printf("quantity:%u\n", addOrder.quantity());
-    printf("side:%hu\n", addOrder.side());
-    printf("lotType:%d\n", addOrder.lotType());
-    printf("OrderType:%d\n", addOrder.orderType());
-    printf("orderBookPosition:%u\n\n", addOrder.orderbookPosition());
+    if (AddOrder.orderbookId() == 56102818)
+    {
+        printf("OrderbookID:%u\n", addOrder.orderbookId());
+        printf("OrderID:%llu\n", addOrder.orderId());
+        printf("price:%d\n", addOrder.price());
+        printf("quantity:%u\n", addOrder.quantity());
+        printf("side:%hu\n", addOrder.side());
+        printf("lotType:%d\n", addOrder.lotType());
+        printf("OrderType:%d\n", addOrder.orderType());
+        printf("orderBookPosition:%u\n\n", addOrder.orderbookPosition());
+    }
 }
 
 void Trade(char *buf, uint16_t offset, uint16_t len)
@@ -198,17 +218,21 @@ void CommodityDefinition(char *buf, uint16_t offset, uint16_t len)
 {
     XdpCommodityDefinition commodity(buf, len, offset);
     // commodity.commodityId();
-    std::cout << "tradeCondition:" << commodity.commodityId() << std::endl;
-    printf("commodityCode:%hu\n", commodity.commodityCode());
-    std::cout << "commodityName:" << commodity.commodityName() << std::endl;
-    printf("orderbookId:%hu\n", commodity.decimalUnderlyingPrice());
-    std::cout << "isinCode:" << commodity.isinCode() << std::endl;
-    std::cout << "baseCurrency:" << commodity.baseCurrency() << std::endl;
-    printf("comboGroupId:%hhu\n", commodity.underlyingPriceUnit());
-    printf("price:%lld\n", commodity.nominalValue());
-    std::cout << "underlyingCode:" << commodity.underlyingCode() << std::endl;
-    printf("side:%hhu\n", commodity.underlyingType());
-    printf("dealType:%hhu\n\n", commodity.effectiveTomorrow());
+    if (trim(commodity.commodityName()) == "HANG SENG INDEX")
+    {
+        std::cout << "commodityCode:" << commodity.commodityCode() << std::endl;
+        std::cout << "commodityId:" << commodity.commodityId() << std::endl;
+        std::cout << "underlyingCode:" << commodity.underlyingCode() << std::endl;
+        std::cout << "commodityName:" << commodity.commodityName() << std::endl;
+        std::cout << "isinCode:" << commodity.isinCode() << std::endl;
+        std::cout << "baseCurrency:" << commodity.baseCurrency() << std::endl;
+        std::cout << "decimalUnderlyingPrice:" << commodity.decimalUnderlyingPrice() << std::endl;
+        std::cout << "underlyingPriceUnit:" << +commodity.underlyingPriceUnit() << std::endl;
+        std::cout << "nominalValue:" << commodity.nominalValue() << std::endl;
+        std::cout << "underlyingType:" << +commodity.underlyingType() << std::endl;
+        std::cout << "effectiveTomorrow:" << +commodity.effectiveTomorrow() << std::endl;
+        std::cout << "===============================================================" << std::endl;
+    }
 }
 
 void SeriesDefinitionBase(char *buf, uint16_t offset, uint16_t len)
@@ -229,46 +253,54 @@ void SeriesDefinitionExtended(char *buf, uint16_t offset, uint16_t len)
 {
     XdpSeriesDefinitionExtented sde(buf, len, offset);
 
-    printf("orderbookId:%u\n", sde.orderbookId());
-    std::cout << "symbol:" << sde.symbol() << std::endl;
-    printf("country:%hhu\n", sde.country());
-    printf("market:%hhu\n", sde.market());
-    printf("instrumentGroup:%hhu\n", sde.instrumentGroup());
-    printf("modifier:%hhu\n", sde.modifier());
-    printf("commodityCode:%hu\n", sde.commodityCode());
-    printf("expirationDate:%hu\n", sde.expirationDate());
-    printf("strikePrice:%d\n", sde.strikePrice());
-    printf("contractSize:%lld\n", sde.contractSize());
-    std::cout << "isinCode:" << sde.isinCode() << std::endl;
-    printf("seriesStatus:%hhu\n", sde.seriesStatus());
-    printf("effectiveTomorrow:%hhu\n", sde.effectiveTomorrow());
-    printf("priceQuotationFactor:%d\n", sde.priceQuotationFactor());
-    std::cout << "effectiveExpDate:" << sde.effectiveExpDate() << std::endl;
-    printf("dateTimeLastTrading:%lld\n\n", sde.dateTimeLastTrading());
+    // if((sde.commodityCode() == 4002  || sde.commodityCode() == 4010) && sde.instrumentGroup() == 4)
+    if (trim(sde.symbol()) == "HSIV8")
+    {
+        std::cout << "orderbookId:" << sde.orderbookId() << std::endl;
+        std::cout << "symbol:" << sde.symbol() << std::endl;
+        std::cout << "country:" << +sde.country() << std::endl;
+        std::cout << "market:" << +sde.market() << std::endl;
+        std::cout << "instrumentGroup:" << +sde.instrumentGroup() << std::endl;
+        std::cout << "modifier:" << +sde.modifier() << std::endl;
+        std::cout << "commodityCode:" << sde.commodityCode() << std::endl;
+        std::cout << "expirationDate:" << sde.expirationDate() << std::endl;
+        std::cout << "strikePrice:" << sde.strikePrice() << std::endl;
+        std::cout << "contractSize:" << +sde.contractSize() << std::endl;
+        std::cout << "isinCode:" << sde.isinCode() << std::endl;
+        std::cout << "seriesStatus:" << +sde.seriesStatus() << std::endl;
+        std::cout << "effectiveTomorrow:" << +sde.effectiveTomorrow() << std::endl;
+        std::cout << "priceQuotationFactor:" << sde.priceQuotationFactor() << std::endl;
+        std::cout << "effectiveExpDate:" << sde.effectiveExpDate() << std::endl;
+        std::cout << "dateTimeLastTrading:" << sde.dateTimeLastTrading() << std::endl;
+        std::cout << "===============================================================" << std::endl;
+    }
 }
 
 void ClassDefinition(char *buf, uint16_t offset, uint16_t len)
 {
     XdpClassDefinition cd(buf, len, offset);
 
-    printf("country:%hhu\n", cd.country());
-    printf("market:%hhu\n", cd.market());
-    printf("instrumentGroup:%hhu\n", cd.instrumentGroup());
-    printf("modifier:%hhu\n", cd.modifier());
-    printf("commodityCode:%hu\n", cd.commodityCode());
-    printf("expirationDate:%d\n", cd.priceQuotationFactor());
-    printf("strikePrice:%u\n", cd.contractSize());
-    printf("contractSize:%hu\n", cd.decimalInStrikePrice());
-    printf("decimalInContractSize:%hu\n", cd.decimalInContractSize());
-    printf("decimalInPremium:%hu\n", cd.decimalInPremium());
-    printf("rnkingType:%hu\n", cd.rnkingType());
-    printf("tradable:%hhu\n", cd.tradable());
-    printf("premiumUnit4Price:%hhu\n", cd.premiumUnit4Price());
-    std::cout << "baseCurrency:" << cd.baseCurrency() << std::endl;
-    std::cout << "instrumentClassID:" << cd.instrumentClassID() << std::endl;
-    std::cout << "instrumentClassName:" << cd.instrumentClassName() << std::endl;
-    std::cout << "isFractions:" << cd.isFractions() << std::endl;
-    std::cout << "settlementCurrencyID:" << cd.settlementCurrencyID() << std::endl;
-    printf("market:%hhu\n", cd.effectiveTomorrow());
-    printf("instrumentGroup:%d\n\n", cd.tickStepSize());
+    if (cd.commodityCode() == 4002 || cd.commodityCode() == 4010)
+    {
+        printf("country:%hhu\n", cd.country());
+        printf("market:%hhu\n", cd.market());
+        printf("instrumentGroup:%hhu\n", cd.instrumentGroup());
+        printf("modifier:%hhu\n", cd.modifier());
+        printf("commodityCode:%hu\n", cd.commodityCode());
+        printf("expirationDate:%d\n", cd.priceQuotationFactor());
+        printf("strikePrice:%u\n", cd.contractSize());
+        printf("contractSize:%hu\n", cd.decimalInStrikePrice());
+        printf("decimalInContractSize:%hu\n", cd.decimalInContractSize());
+        printf("decimalInPremium:%hu\n", cd.decimalInPremium());
+        printf("rnkingType:%hu\n", cd.rnkingType());
+        printf("tradable:%hhu\n", cd.tradable());
+        printf("premiumUnit4Price:%hhu\n", cd.premiumUnit4Price());
+        std::cout << "baseCurrency:" << cd.baseCurrency() << std::endl;
+        std::cout << "instrumentClassID:" << cd.instrumentClassID() << std::endl;
+        std::cout << "instrumentClassName:" << cd.instrumentClassName() << std::endl;
+        std::cout << "isFractions:" << cd.isFractions() << std::endl;
+        std::cout << "settlementCurrencyID:" << cd.settlementCurrencyID() << std::endl;
+        printf("market:%hhu\n", cd.effectiveTomorrow());
+        printf("instrumentGroup:%d\n\n", cd.tickStepSize());
+    }
 }
