@@ -44,6 +44,9 @@ typedef struct XdpMessageHeader
 
 void ProcessMessageHeader(char *buf, int msgCount);
 void AddOrder(char *buf, uint16_t offset, uint16_t len);
+void ModifyOrder(char *buf, uint16_t offset, uint16_t len);
+void DeleteOrder(char *buf, uint16_t offset, uint16_t len);
+void ClearOrder(char *buf, uint16_t offset, uint16_t len);
 void Trade(char *buf, uint16_t offset, uint16_t len);
 void CommodityDefinition(char *buf, uint16_t offset, uint16_t len);
 void SeriesDefinitionExtended(char *buf, uint16_t offset, uint16_t len);
@@ -91,7 +94,7 @@ int main(int argc, char *argv[])
             int port = ntohs(udph->dest);
             if (hdr->mMsgCount > 0)
             {
-                if (strcmp(ip, "239.1.127.153") == 0 && port == 51003)
+                if (strcmp(ip, "239.1.127.130") == 0 && port == 51002)
                 {
                     // printf("\n==================================================channel id:121 239.1.127.130:51001======================================================\n");
                     // printf("PktSize:%hu,", hdr->mPktSize);
@@ -153,6 +156,18 @@ void ProcessMessageHeader(char *buf, int msgCount)
         // {
         //     AddOrder(buf, 4, msghdr->mMsgSize);
         // }
+        // if (msghdr->mMsgType == DELETEORDER)
+        // {
+        //     DeleteOrder(buf, 4, msghdr->mMsgSize);
+        // }
+        if (msghdr->mMsgType == MODIFYORDER)
+        {
+            ModifyOrder(buf, 4, msghdr->mMsgSize);
+        }
+        if (msghdr->mMsgType == CLEARORDER)
+        {
+            ClearOrder(buf, 4, msghdr->mMsgSize);
+        }
         // if (msghdr->mMsgType == TRADE)
         // {
         //     Trade(buf, 4, msghdr->mMsgSize);
@@ -166,13 +181,13 @@ void ProcessMessageHeader(char *buf, int msgCount)
         // {
         //     ClassDefinition(buf, 4, msghdr->mMsgSize);
         // }
-        if (msghdr->mMsgType == SERIESDEFINITIONEXTENDED)
-        {
-            SeriesDefinitionExtended(buf, 4, msghdr->mMsgSize);
-        }
         // if (msghdr->mMsgType == SERIESDEFINITIONBASE)
         // {
         //     SeriesDefinitionBase(buf, 4, msghdr->mMsgSize);
+        // }
+        // if (msghdr->mMsgType == SERIESDEFINITIONEXTENDED)
+        // {
+        //     SeriesDefinitionExtended(buf, 4, msghdr->mMsgSize);
         // }
         n++;
         buf = buf + msghdr->mMsgSize;
@@ -183,9 +198,10 @@ void ProcessMessageHeader(char *buf, int msgCount)
 
 void AddOrder(char *buf, uint16_t offset, uint16_t len)
 {
-    XdpAddModOrder addOrder(buf, len, offset);
-    if (AddOrder.orderbookId() == 56102818)
+    XdpAddOrder addOrder(buf, len, offset);
+    if (addOrder.orderbookId() == 56102818)
     {
+        printf("add\n");
         printf("OrderbookID:%u\n", addOrder.orderbookId());
         printf("OrderID:%llu\n", addOrder.orderId());
         printf("price:%d\n", addOrder.price());
@@ -194,6 +210,48 @@ void AddOrder(char *buf, uint16_t offset, uint16_t len)
         printf("lotType:%d\n", addOrder.lotType());
         printf("OrderType:%d\n", addOrder.orderType());
         printf("orderBookPosition:%u\n\n", addOrder.orderbookPosition());
+        std::cout << "===============================================================" << std::endl;
+    }
+}
+
+void ModifyOrder(char *buf, uint16_t offset, uint16_t len)
+{
+    XdpModifyOrder modifyOrder(buf, len, offset);
+    if (modifyOrder.orderbookId() == 56102818)
+    {
+        printf("modify\n");
+        printf("OrderbookID:%u\n", modifyOrder.orderbookId());
+        printf("OrderID:%llu\n", modifyOrder.orderId());
+        printf("price:%d\n", modifyOrder.price());
+        printf("quantity:%u\n", modifyOrder.quantity());
+        printf("side:%hu\n", modifyOrder.side());
+        printf("OrderType:%d\n", modifyOrder.orderType());
+        printf("orderBookPosition:%u\n\n", modifyOrder.orderbookPosition());
+        std::cout << "===============================================================" << std::endl;
+    }
+}
+
+void DeleteOrder(char *buf, uint16_t offset, uint16_t len)
+{
+    XdpDeleteOrder deleteOrder(buf, len, offset);
+    if (deleteOrder.orderbookId() == 56102818)
+    {
+        printf("delete\n");
+        printf("OrderbookID:%u\n", deleteOrder.orderbookId());
+        printf("OrderID:%llu\n", deleteOrder.orderId());
+        printf("side:%hhu\n", deleteOrder.side());
+        std::cout << "===============================================================" << std::endl;
+    }
+}
+
+void ClearOrder(char *buf, uint16_t offset, uint16_t len)
+{
+    XdpClearOrder clearOrder(buf, len, offset);
+    if (clearOrder.orderbookId() == 56102818)
+    {
+        printf("clear\n");
+        printf("OrderbookID:%u\n", clearOrder.orderbookId());
+        std::cout << "===============================================================" << std::endl;
     }
 }
 

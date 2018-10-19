@@ -19,10 +19,29 @@
 #include <linux/if_packet.h>
 #include <netinet/if_ether.h>
 #include <iostream>
+#include <fstream>
 #include <time.h>
+#include "test.h"
+#include "OrderbookData.h"
+#include "TradeData.h"
+#include "ReferenceData.h"
+
 #define BUFF_SIZE 2048
 static const char *g_szIfName = "ens3f1np1"; // 网卡接口
+typedef struct XdpPacketHeader
+{
+    unsigned short mPktSize;
+    unsigned char mMsgCount;
+    unsigned char mFiller;
+    unsigned int mSeqNum;
+    unsigned long long mSendTime;
+} PacketHeader;
 
+typedef struct XdpMessageHeader
+{
+    unsigned short mMsgSize;
+    unsigned short mMsgType;
+} MessageHeader;
 void ProcessMessageHeader(char *buf, int msgCount, int id);
 void AddOrder(char *buf, uint16_t offset, uint16_t len);
 void Trade(char *buf, uint16_t offset, uint16_t len);
@@ -161,17 +180,17 @@ void ProcessMessageHeader(char *buf, int msgCount, int id)
 void AddOrder(char *buf, uint16_t offset, uint16_t len)
 {
     XdpAddModOrder addOrder(buf, len, offset);
-    if (AddOrder.orderbookId() == 56102818)
-    {
-        printf("OrderbookID:%u\n", addOrder.orderbookId());
-        printf("OrderID:%llu\n", addOrder.orderId());
-        printf("price:%d\n", addOrder.price());
-        printf("quantity:%u\n", addOrder.quantity());
-        printf("side:%hu\n", addOrder.side());
-        printf("lotType:%d\n", addOrder.lotType());
-        printf("OrderType:%d\n", addOrder.orderType());
-        printf("orderBookPosition:%u\n\n", addOrder.orderbookPosition());
-    }
+    // if (AddOrder.orderbookId() == 56102818)
+    // {
+    //     printf("OrderbookID:%u\n", addOrder.orderbookId());
+    //     printf("OrderID:%llu\n", addOrder.orderId());
+    //     printf("price:%d\n", addOrder.price());
+    //     printf("quantity:%u\n", addOrder.quantity());
+    //     printf("side:%hu\n", addOrder.side());
+    //     printf("lotType:%d\n", addOrder.lotType());
+    //     printf("OrderType:%d\n", addOrder.orderType());
+    //     printf("orderBookPosition:%u\n\n", addOrder.orderbookPosition());
+    // }
 }
 
 void Trade(char *buf, uint16_t offset, uint16_t len)
@@ -195,29 +214,53 @@ void CommodityDefinition(char *buf, uint16_t offset, uint16_t len, int id)
 {
     XdpCommodityDefinition commodity(buf, len, offset);
     // commodity.commodityId();
-    std::ofstream outfile;
     if (id == 1)
-        outfile("real-time-commo.txt", std::ios::app);
-    else if (id == 2)
-        outfile("snap-commo.txt", std::ios::app);
-    if (trim(commodity.commodityName()) == "HANG SENG INDEX")
     {
-        time_t timep;
-        time(&timep);s
-        char *p = ctime(&timep);
-        outfile << p << std::endl;
-        outfile << "commodityCode:" << commodity.commodityCode() << std::endl;
-        outfile << "commodityId:" << commodity.commodityId() << std::endl;
-        outfile << "underlyingCode:" << commodity.underlyingCode() << std::endl;
-        outfile << "commodityName:" << commodity.commodityName() << std::endl;
-        outfile << "isinCode:" << commodity.isinCode() << std::endl;
-        outfile << "baseCurrency:" << commodity.baseCurrency() << std::endl;
-        outfile << "decimalUnderlyingPrice:" << commodity.decimalUnderlyingPrice() << std::endl;
-        outfile << "underlyingPriceUnit:" << +commodity.underlyingPriceUnit() << std::endl;
-        outfile << "nominalValue:" << commodity.nominalValue() << std::endl;
-        outfile << "underlyingType:" << +commodity.underlyingType() << std::endl;
-        outfile << "effectiveTomorrow:" << +commodity.effectiveTomorrow() << std::endl;
-        outfile << "===============================================================" << std::endl;
+        std::ofstream outfile("real-time-commo.txt", std::ios::app);
+        if (trim(commodity.commodityName()) == "HANG SENG INDEX")
+        {
+            time_t timep;
+            time(&timep);
+            char *p = ctime(&timep);
+            outfile << p << std::endl;
+            outfile << "commodityCode:" << commodity.commodityCode() << std::endl;
+            outfile << "commodityId:" << commodity.commodityId() << std::endl;
+            outfile << "underlyingCode:" << commodity.underlyingCode() << std::endl;
+            outfile << "commodityName:" << commodity.commodityName() << std::endl;
+            outfile << "isinCode:" << commodity.isinCode() << std::endl;
+            outfile << "baseCurrency:" << commodity.baseCurrency() << std::endl;
+            outfile << "decimalUnderlyingPrice:" << commodity.decimalUnderlyingPrice() << std::endl;
+            outfile << "underlyingPriceUnit:" << +commodity.underlyingPriceUnit() << std::endl;
+            outfile << "nominalValue:" << commodity.nominalValue() << std::endl;
+            outfile << "underlyingType:" << +commodity.underlyingType() << std::endl;
+            outfile << "effectiveTomorrow:" << +commodity.effectiveTomorrow() << std::endl;
+            outfile << "===============================================================" << std::endl;
+        }
+        outfile.close();
+    }
+    else if (id == 2)
+    {
+        std::ofstream outfile("snap-commo.txt", std::ios::app);
+        if (trim(commodity.commodityName()) == "HANG SENG INDEX")
+        {
+            time_t timep;
+            time(&timep);
+            char *p = ctime(&timep);
+            outfile << p << std::endl;
+            outfile << "commodityCode:" << commodity.commodityCode() << std::endl;
+            outfile << "commodityId:" << commodity.commodityId() << std::endl;
+            outfile << "underlyingCode:" << commodity.underlyingCode() << std::endl;
+            outfile << "commodityName:" << commodity.commodityName() << std::endl;
+            outfile << "isinCode:" << commodity.isinCode() << std::endl;
+            outfile << "baseCurrency:" << commodity.baseCurrency() << std::endl;
+            outfile << "decimalUnderlyingPrice:" << commodity.decimalUnderlyingPrice() << std::endl;
+            outfile << "underlyingPriceUnit:" << +commodity.underlyingPriceUnit() << std::endl;
+            outfile << "nominalValue:" << commodity.nominalValue() << std::endl;
+            outfile << "underlyingType:" << +commodity.underlyingType() << std::endl;
+            outfile << "effectiveTomorrow:" << +commodity.effectiveTomorrow() << std::endl;
+            outfile << "===============================================================" << std::endl;
+        }
+        outfile.close();
     }
 }
 
@@ -240,36 +283,65 @@ void SeriesDefinitionExtended(char *buf, uint16_t offset, uint16_t len, int id)
     XdpSeriesDefinitionExtented sde(buf, len, offset);
 
     // if((sde.commodityCode() == 4002  || sde.commodityCode() == 4010) && sde.instrumentGroup() == 4)
-    std::ofstream outfile;
     if (id == 1)
-        outfile("real-time-extended.txt", std::ios::app);
-    else if (id == 2)
-        outfile("snap-extended.txt", std::ios::app);
-    if (trim(sde.symbol()) == "HSIV8")
     {
-        time_t timep;
-        time(&timep);
-        char *p = ctime(&timep);
-        outfile << p << std::endl;
-        outfile << "orderbookId:" << sde.orderbookId() << std::endl;
-        outfile << "symbol:" << sde.symbol() << std::endl;
-        outfile << "country:" << +sde.country() << std::endl;
-        outfile << "market:" << +sde.market() << std::endl;
-        outfile << "instrumentGroup:" << +sde.instrumentGroup() << std::endl;
-        outfile << "modifier:" << +sde.modifier() << std::endl;
-        outfile << "commodityCode:" << sde.commodityCode() << std::endl;
-        outfile << "expirationDate:" << sde.expirationDate() << std::endl;
-        outfile << "strikePrice:" << sde.strikePrice() << std::endl;
-        outfile << "contractSize:" << +sde.contractSize() << std::endl;
-        outfile << "isinCode:" << sde.isinCode() << std::endl;
-        outfile << "seriesStatus:" << +sde.seriesStatus() << std::endl;
-        outfile << "effectiveTomorrow:" << +sde.effectiveTomorrow() << std::endl;
-        outfile << "priceQuotationFactor:" << sde.priceQuotationFactor() << std::endl;
-        outfile << "effectiveExpDate:" << sde.effectiveExpDate() << std::endl;
-        outfile << "dateTimeLastTrading:" << sde.dateTimeLastTrading() << std::endl;
-        outfile << "===============================================================" << std::endl;
+        std::ofstream outfile("real-time-extended.txt", std::ios::app);
+        if (trim(sde.symbol()) == "HSIV8")
+        {
+            time_t timep;
+            time(&timep);
+            char *p = ctime(&timep);
+            outfile << p << std::endl;
+            outfile << "orderbookId:" << sde.orderbookId() << std::endl;
+            outfile << "symbol:" << sde.symbol() << std::endl;
+            outfile << "country:" << +sde.country() << std::endl;
+            outfile << "market:" << +sde.market() << std::endl;
+            outfile << "instrumentGroup:" << +sde.instrumentGroup() << std::endl;
+            outfile << "modifier:" << +sde.modifier() << std::endl;
+            outfile << "commodityCode:" << sde.commodityCode() << std::endl;
+            outfile << "expirationDate:" << sde.expirationDate() << std::endl;
+            outfile << "strikePrice:" << sde.strikePrice() << std::endl;
+            outfile << "contractSize:" << +sde.contractSize() << std::endl;
+            outfile << "isinCode:" << sde.isinCode() << std::endl;
+            outfile << "seriesStatus:" << +sde.seriesStatus() << std::endl;
+            outfile << "effectiveTomorrow:" << +sde.effectiveTomorrow() << std::endl;
+            outfile << "priceQuotationFactor:" << sde.priceQuotationFactor() << std::endl;
+            outfile << "effectiveExpDate:" << sde.effectiveExpDate() << std::endl;
+            outfile << "dateTimeLastTrading:" << sde.dateTimeLastTrading() << std::endl;
+            outfile << "===============================================================" << std::endl;
+        }
+        outfile.close();
     }
-    outfile.close();
+
+    else if (id == 2)
+    {
+        std::ofstream outfile("snap-extended.txt", std::ios::app);
+        if (trim(sde.symbol()) == "HSIV8")
+        {
+            time_t timep;
+            time(&timep);
+            char *p = ctime(&timep);
+            outfile << p << std::endl;
+            outfile << "orderbookId:" << sde.orderbookId() << std::endl;
+            outfile << "symbol:" << sde.symbol() << std::endl;
+            outfile << "country:" << +sde.country() << std::endl;
+            outfile << "market:" << +sde.market() << std::endl;
+            outfile << "instrumentGroup:" << +sde.instrumentGroup() << std::endl;
+            outfile << "modifier:" << +sde.modifier() << std::endl;
+            outfile << "commodityCode:" << sde.commodityCode() << std::endl;
+            outfile << "expirationDate:" << sde.expirationDate() << std::endl;
+            outfile << "strikePrice:" << sde.strikePrice() << std::endl;
+            outfile << "contractSize:" << +sde.contractSize() << std::endl;
+            outfile << "isinCode:" << sde.isinCode() << std::endl;
+            outfile << "seriesStatus:" << +sde.seriesStatus() << std::endl;
+            outfile << "effectiveTomorrow:" << +sde.effectiveTomorrow() << std::endl;
+            outfile << "priceQuotationFactor:" << sde.priceQuotationFactor() << std::endl;
+            outfile << "effectiveExpDate:" << sde.effectiveExpDate() << std::endl;
+            outfile << "dateTimeLastTrading:" << sde.dateTimeLastTrading() << std::endl;
+            outfile << "===============================================================" << std::endl;
+        }
+        outfile.close();
+    }
 }
 
 void ClassDefinition(char *buf, uint16_t offset, uint16_t len)

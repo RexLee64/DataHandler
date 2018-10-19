@@ -45,6 +45,9 @@ typedef struct XdpMessageHeader
 
 void ProcessMessageHeader(char *buf, int msgCount);
 void AddOrder(char *buf, uint16_t offset, uint16_t len);
+void ModifyOrder(char *buf, uint16_t offset, uint16_t len);
+void DeleteOrder(char *buf, uint16_t offset, uint16_t len);
+void ClearOrder(char *buf, uint16_t offset, uint16_t len);
 void Trade(char *buf, uint16_t offset, uint16_t len);
 void CommodityDefinition(char *buf, uint16_t offset, uint16_t len);
 void SeriesDefinitionExtended(char *buf, uint16_t offset, uint16_t len);
@@ -110,7 +113,7 @@ int main(int argc, char *argv[])
             int port = ntohs(udph->dest);
             if (hdr->mMsgCount > 0)
             {
-                if (strcmp(ip, "239.1.127.153") == 0 && port == 51003)
+                if (strcmp(ip, "239.1.127.130") == 0 && port == 51002)
                 {
                     // printf("\n==================================================channel id:121 239.1.127.130:51001======================================================\n");
                     // printf("PktSize:%hu,", hdr->mPktSize);
@@ -145,10 +148,22 @@ void ProcessMessageHeader(char *buf, int msgCount)
     {
         MessageHeader *msghdr = (MessageHeader *)buf;
         // printf("msg %d: msgsize=%d, msgtype=%d\n", n, msghdr->mMsgSize, msghdr->mMsgType);
-        // if (msghdr->mMsgType == ADDORDER)
-        // {
-        //     AddOrder(buf, 4, msghdr->mMsgSize);
-        // }
+        if (msghdr->mMsgType == ADDORDER)
+        {
+            AddOrder(buf, 4, msghdr->mMsgSize);
+        }
+        if (msghdr->mMsgType == DELETEORDER)
+        {
+            DeleteOrder(buf, 4, msghdr->mMsgSize);
+        }
+        if (msghdr->mMsgType == MODIFYORDER)
+        {
+            ModifyOrder(buf, 4, msghdr->mMsgSize);
+        }
+        if (msghdr->mMsgType == CLEARORDER)
+        {
+            ClearOrder(buf, 4, msghdr->mMsgSize);
+        }
         // if (msghdr->mMsgType == TRADE)
         // {
         //     Trade(buf, 4, msghdr->mMsgSize);
@@ -166,10 +181,10 @@ void ProcessMessageHeader(char *buf, int msgCount)
         // {
         //     SeriesDefinitionBase(buf, 4, msghdr->mMsgSize);
         // }
-        if (msghdr->mMsgType == SERIESDEFINITIONEXTENDED)
-        {
-            SeriesDefinitionExtended(buf, 4, msghdr->mMsgSize);
-        }
+        // if (msghdr->mMsgType == SERIESDEFINITIONEXTENDED)
+        // {
+        //     SeriesDefinitionExtended(buf, 4, msghdr->mMsgSize);
+        // }
         n++;
         buf = buf + msghdr->mMsgSize;
         size += msghdr->mMsgSize;
@@ -179,15 +194,51 @@ void ProcessMessageHeader(char *buf, int msgCount)
 
 void AddOrder(char *buf, uint16_t offset, uint16_t len)
 {
-    XdpAddModOrder addOrder(buf, len, offset);
-    printf("OrderbookID:%u\n", addOrder.orderbookId());
-    printf("OrderID:%llu\n", addOrder.orderId());
-    printf("price:%d\n", addOrder.price());
-    printf("quantity:%u\n", addOrder.quantity());
-    printf("side:%hu\n", addOrder.side());
-    printf("lotType:%d\n", addOrder.lotType());
-    printf("OrderType:%d\n", addOrder.orderType());
-    printf("orderBookPosition:%u\n\n", addOrder.orderbookPosition());
+    XdpAddOrder addOrder(buf, len, offset);
+    if (addOrder.orderbookId() == 56102818)
+    {
+        printf("OrderbookID:%u\n", addOrder.orderbookId());
+        printf("OrderID:%llu\n", addOrder.orderId());
+        printf("price:%d\n", addOrder.price());
+        printf("quantity:%u\n", addOrder.quantity());
+        printf("side:%hu\n", addOrder.side());
+        printf("lotType:%d\n", addOrder.lotType());
+        printf("OrderType:%d\n", addOrder.orderType());
+        printf("orderBookPosition:%u\n\n", addOrder.orderbookPosition());
+    }
+}
+
+void ModifyOrder(char *buf, uint16_t offset, uint16_t len)
+{
+    XdpModifyOrder modifyOrder(buf, len, offset);
+    if (modifyOrder.orderbookId() == 56102818)
+    {
+
+        printf("OrderbookID:%u\n", modifyOrder.orderbookId());
+        printf("OrderID:%llu\n", modifyOrder.orderId());
+        printf("price:%d\n", modifyOrder.price());
+        printf("quantity:%u\n", modifyOrder.quantity());
+        printf("side:%hu\n", modifyOrder.side());
+        printf("OrderType:%d\n", modifyOrder.orderType());
+        printf("orderBookPosition:%u\n\n", modifyOrder.orderbookPosition());
+    }
+}
+
+void DeleteOrder(char *buf, uint16_t offset, uint16_t len)
+{
+    XdpDeleteOrder deleteOrder(buf, len, offset);
+    if (deleteOrder.orderbookId() == 56102818)
+    {
+        printf("OrderbookID:%u\n", deleteOrder.orderbookId());
+        printf("OrderID:%llu\n", deleteOrder.orderId());
+        printf("side:%hhu\n", deleteOrder.side());
+    }
+}
+
+void ClearOrder(char *buf, uint16_t offset, uint16_t len)
+{
+    XdpClearOrder clearOrder(buf, len, offset);
+    printf("OrderbookID:%u\n", clearOrder.orderbookId());
 }
 
 void Trade(char *buf, uint16_t offset, uint16_t len)
@@ -258,7 +309,7 @@ void SeriesDefinitionExtended(char *buf, uint16_t offset, uint16_t len)
 {
     XdpSeriesDefinitionExtented sde(buf, len, offset);
     std::ofstream outfile("extended.txt", std::ios::app);
-    if ((sde.commodityCode() == 4002  || sde.commodityCode() == 4010) && sde.instrumentGroup() == 4)
+    if ((sde.commodityCode() == 4002 || sde.commodityCode() == 4010) && sde.instrumentGroup() == 4)
     {
         outfile << "orderbookId" << sde.orderbookId() << std::endl;
         outfile << "symbol:" << sde.symbol() << std::endl;

@@ -123,13 +123,13 @@ class XdpDeleteOrder : public XdpBaseData
     uint64_t orderId()
     {
         uint64_t val;
-        memcpy(&val, mBuffer + mOffset, sizeof(uint64_t));
+        memcpy(&val, mBuffer + mOffset + 4, sizeof(uint64_t));
         return val;
     }
     uint8_t side()
     {
         uint8_t val;
-        memcpy(&val, mBuffer + mOffset, sizeof(uint8_t));
+        memcpy(&val, mBuffer + mOffset + 12, sizeof(uint8_t));
         return val;
     }
 };
