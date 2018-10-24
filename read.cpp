@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
             int port = ntohs(udph->dest);
             if (hdr->mMsgCount > 0)
             {
-                if (strcmp(ip, "239.1.127.130") == 0 && port == 51002)
+                if (strcmp(ip, "239.1.127.155") == 0 && port == 51002)
                 {
                     // printf("\n==================================================channel id:121 239.1.127.130:51001======================================================\n");
                     // printf("PktSize:%hu,", hdr->mPktSize);
@@ -160,18 +160,18 @@ void ProcessMessageHeader(char *buf, int msgCount)
         // {
         //     DeleteOrder(buf, 4, msghdr->mMsgSize);
         // }
-        if (msghdr->mMsgType == MODIFYORDER)
-        {
-            ModifyOrder(buf, 4, msghdr->mMsgSize);
-        }
-        if (msghdr->mMsgType == CLEARORDER)
-        {
-            ClearOrder(buf, 4, msghdr->mMsgSize);
-        }
-        // if (msghdr->mMsgType == TRADE)
+        // if (msghdr->mMsgType == MODIFYORDER)
         // {
-        //     Trade(buf, 4, msghdr->mMsgSize);
+        //     ModifyOrder(buf, 4, msghdr->mMsgSize);
         // }
+        // if (msghdr->mMsgType == CLEARORDER)
+        // {
+        //     ClearOrder(buf, 4, msghdr->mMsgSize);
+        // }
+        if (msghdr->mMsgType == TRADE)
+        {
+            Trade(buf, 4, msghdr->mMsgSize);
+        }
 
         // if (msghdr->mMsgType == COMMODITYDEFINITION)
         // {
@@ -217,8 +217,8 @@ void AddOrder(char *buf, uint16_t offset, uint16_t len)
 void ModifyOrder(char *buf, uint16_t offset, uint16_t len)
 {
     XdpModifyOrder modifyOrder(buf, len, offset);
-    if (modifyOrder.orderbookId() == 56102818)
-    {
+    // if (modifyOrder.orderbookId() == 56102818)
+    // {
         printf("modify\n");
         printf("OrderbookID:%u\n", modifyOrder.orderbookId());
         printf("OrderID:%llu\n", modifyOrder.orderId());
@@ -228,7 +228,7 @@ void ModifyOrder(char *buf, uint16_t offset, uint16_t len)
         printf("OrderType:%d\n", modifyOrder.orderType());
         printf("orderBookPosition:%u\n\n", modifyOrder.orderbookPosition());
         std::cout << "===============================================================" << std::endl;
-    }
+    // }
 }
 
 void DeleteOrder(char *buf, uint16_t offset, uint16_t len)
@@ -258,18 +258,20 @@ void ClearOrder(char *buf, uint16_t offset, uint16_t len)
 void Trade(char *buf, uint16_t offset, uint16_t len)
 {
     XdpTrade trade(buf, len, offset);
-
-    printf("tradeTime:%u\n", trade.tradeTime());
-    printf("orderbookId:%u\n", trade.orderbookId());
-    printf("orderId:%llu\n", trade.orderId());
-    printf("tradeId:%llu\n", trade.tradeId());
-    printf("comboGroupId:%u\n", trade.comboGroupId());
-    printf("price:%d\n", trade.price());
-    printf("quantity:%u\n", trade.quantity());
-    printf("side:%hhu\n", trade.side());
-    printf("dealType:%hhu\n", trade.dealType());
-    printf("tradeCondition:%hu\n", trade.tradeCondition());
-    printf("dealInfo:%hu\n\n", trade.dealInfo());
+    // if (trade.orderbookId() == 56102818)
+    {
+        printf("tradeTime:%u\n", trade.tradeTime());
+        printf("orderbookId:%u\n", trade.orderbookId());
+        printf("orderId:%llu\n", trade.orderId());
+        printf("tradeId:%llu\n", trade.tradeId());
+        printf("comboGroupId:%u\n", trade.comboGroupId());
+        printf("price:%d\n", trade.price());
+        printf("quantity:%u\n", trade.quantity());
+        printf("side:%hhu\n", trade.side());
+        printf("dealType:%hhu\n", trade.dealType());
+        printf("tradeCondition:%hu\n", trade.tradeCondition());
+        printf("dealInfo:%hu\n\n", trade.dealInfo());
+    }
 }
 
 void CommodityDefinition(char *buf, uint16_t offset, uint16_t len)

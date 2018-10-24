@@ -21,6 +21,7 @@
 #include <netinet/if_ether.h>
 #include <iostream>
 #include <fstream>
+#include <time.h>
 #include "OrderbookData.h"
 #include "TradeData.h"
 #include "ReferenceData.h"
@@ -49,6 +50,7 @@ void ModifyOrder(char *buf, uint16_t offset, uint16_t len);
 void DeleteOrder(char *buf, uint16_t offset, uint16_t len);
 void ClearOrder(char *buf, uint16_t offset, uint16_t len);
 void Trade(char *buf, uint16_t offset, uint16_t len);
+void TradeAmendment(char *buf, uint16_t offset, uint16_t len);
 void CommodityDefinition(char *buf, uint16_t offset, uint16_t len);
 void SeriesDefinitionExtended(char *buf, uint16_t offset, uint16_t len);
 void SeriesDefinitionBase(char *buf, uint16_t offset, uint16_t len);
@@ -113,9 +115,8 @@ int main(int argc, char *argv[])
             int port = ntohs(udph->dest);
             if (hdr->mMsgCount > 0)
             {
-                if (strcmp(ip, "239.1.127.130") == 0 && port == 51002)
+                if (strcmp(ip, "239.1.127.155") == 0 && port == 51002)
                 {
-                    // printf("\n==================================================channel id:121 239.1.127.130:51001======================================================\n");
                     // printf("PktSize:%hu,", hdr->mPktSize);
                     // printf("MsgCount:%hu,", hdr->mMsgCount);
                     // printf("SeqNum:%lu\n", hdr->mSeqNum);
@@ -168,6 +169,10 @@ void ProcessMessageHeader(char *buf, int msgCount)
         // {
         //     Trade(buf, 4, msghdr->mMsgSize);
         // }
+        // if (msghdr->mMsgType == TRADEAMENDMENT)
+        // {
+        //     Trade(buf, 4, msghdr->mMsgSize);
+        // }
 
         // if (msghdr->mMsgType == COMMODITYDEFINITION)
         // {
@@ -195,16 +200,28 @@ void ProcessMessageHeader(char *buf, int msgCount)
 void AddOrder(char *buf, uint16_t offset, uint16_t len)
 {
     XdpAddOrder addOrder(buf, len, offset);
+
     if (addOrder.orderbookId() == 56102818)
     {
-        printf("OrderbookID:%u\n", addOrder.orderbookId());
-        printf("OrderID:%llu\n", addOrder.orderId());
-        printf("price:%d\n", addOrder.price());
-        printf("quantity:%u\n", addOrder.quantity());
-        printf("side:%hu\n", addOrder.side());
-        printf("lotType:%d\n", addOrder.lotType());
-        printf("OrderType:%d\n", addOrder.orderType());
-        printf("orderBookPosition:%u\n\n", addOrder.orderbookPosition());
+        std::ofstream out("add.txt", std::ios::app);
+        out << "orderbookID:"
+            << addOrder.orderbookId() << std::endl;
+        out << "orderId:"
+            << addOrder.orderId() << std::endl;
+        out << "price:"
+            << addOrder.price() << std::endl;
+        out << "quantity:"
+            << addOrder.quantity() << std::endl;
+        out << "side:"
+            << +addOrder.side() << std::endl;
+        out << "lotType:"
+            << +addOrder.lotType() << std::endl;
+        out << "orderType:"
+            << addOrder.orderType() << std::endl;
+        out << "orderbookPosition:"
+            << addOrder.orderbookPosition() << std::endl;
+        out << "=====================================\n";
+        out.close();
     }
 }
 
@@ -213,14 +230,24 @@ void ModifyOrder(char *buf, uint16_t offset, uint16_t len)
     XdpModifyOrder modifyOrder(buf, len, offset);
     if (modifyOrder.orderbookId() == 56102818)
     {
+        std::ofstream out("modify.txt", std::ios::app);
+        out << "orderbookID:"
+            << modifyOrder.orderbookId() << std::endl;
+        out << "orderId:"
+            << modifyOrder.orderId() << std::endl;
+        out << "price:"
+            << modifyOrder.price() << std::endl;
+        out << "quantity:"
+            << modifyOrder.quantity() << std::endl;
+        out << "side:"
+            << +modifyOrder.side() << std::endl;
+        out << "orderType:"
+            << modifyOrder.orderType() << std::endl;
+        out << "orderbookPosition:"
+            << modifyOrder.orderbookPosition() << std::endl;
+        out << "=====================================\n";
 
-        printf("OrderbookID:%u\n", modifyOrder.orderbookId());
-        printf("OrderID:%llu\n", modifyOrder.orderId());
-        printf("price:%d\n", modifyOrder.price());
-        printf("quantity:%u\n", modifyOrder.quantity());
-        printf("side:%hu\n", modifyOrder.side());
-        printf("OrderType:%d\n", modifyOrder.orderType());
-        printf("orderBookPosition:%u\n\n", modifyOrder.orderbookPosition());
+        out.close();
     }
 }
 
@@ -229,9 +256,16 @@ void DeleteOrder(char *buf, uint16_t offset, uint16_t len)
     XdpDeleteOrder deleteOrder(buf, len, offset);
     if (deleteOrder.orderbookId() == 56102818)
     {
-        printf("OrderbookID:%u\n", deleteOrder.orderbookId());
-        printf("OrderID:%llu\n", deleteOrder.orderId());
-        printf("side:%hhu\n", deleteOrder.side());
+        std::ofstream out("delete.txt", std::ios::app);
+        out << "orderbookID:"
+            << deleteOrder.orderbookId() << std::endl;
+        out << "orderId:"
+            << deleteOrder.orderId() << std::endl;
+        out << "side:"
+            << +deleteOrder.side() << std::endl;
+        out << "=====================================\n";
+
+        out.close();
     }
 }
 
@@ -244,18 +278,24 @@ void ClearOrder(char *buf, uint16_t offset, uint16_t len)
 void Trade(char *buf, uint16_t offset, uint16_t len)
 {
     XdpTrade trade(buf, len, offset);
-
-    printf("tradeTime:%u\n", trade.tradeTime());
-    printf("orderbookId:%u\n", trade.orderbookId());
-    printf("orderId:%llu\n", trade.orderId());
-    printf("tradeId:%llu\n", trade.tradeId());
-    printf("comboGroupId:%u\n", trade.comboGroupId());
-    printf("price:%d\n", trade.price());
-    printf("quantity:%u\n", trade.quantity());
-    printf("side:%hhu\n", trade.side());
-    printf("dealType:%hhu\n", trade.dealType());
-    printf("tradeCondition:%hu\n", trade.tradeCondition());
-    printf("dealInfo:%hu\n\n", trade.dealInfo());
+    if (trade.orderbookId() == 56102818)
+    {
+        printf("tradeTime:%u\n", trade.tradeTime());
+        printf("orderbookId:%u\n", trade.orderbookId());
+        printf("orderId:%llu\n", trade.orderId());
+        printf("tradeId:%llu\n", trade.tradeId());
+        printf("comboGroupId:%u\n", trade.comboGroupId());
+        printf("price:%d\n", trade.price());
+        printf("quantity:%u\n", trade.quantity());
+        printf("side:%hhu\n", trade.side());
+        printf("dealType:%hhu\n", trade.dealType());
+        printf("tradeCondition:%hu\n", trade.tradeCondition());
+        printf("dealInfo:%hu\n\n", trade.dealInfo());
+    }
+}
+void TradeAmendment(char *buf, uint16_t offset, uint16_t len)
+{
+    XdpTradeAmendment traAmend(buf, len, offset);
 }
 
 void CommodityDefinition(char *buf, uint16_t offset, uint16_t len)
@@ -295,57 +335,42 @@ void CommodityDefinition(char *buf, uint16_t offset, uint16_t len)
 void SeriesDefinitionBase(char *buf, uint16_t offset, uint16_t len)
 {
     XdpSeriesDefinitionBase sdb(buf, len, offset);
-    std::cout << "orderbookId:" << sdb.orderbookId() << std::endl;
-    std::cout << "symbol:" << sdb.symbol() << std::endl;
-    std::cout << "financialProduct" << +sdb.financialProduct() << std::endl;
-    std::cout << "numberOfDecimalsPrice:" << sdb.numberOfDecimalsPrice() << std::endl;
-    std::cout << "numberOfLegs" << +sdb.numberOfLegs() << std::endl;
-    std::cout << "expirationDate:" << sdb.expirationDate() << std::endl;
-    std::cout << "putOrCall:" << +sdb.putOrCall() << std::endl;
-    std::cout << "===============================================================" << std::endl;
+    if (trim(sdb.symbol()) == "HSIV8")
+    {
+        std::cout << "orderbookId:" << sdb.orderbookId() << std::endl;
+        std::cout << "symbol:" << sdb.symbol() << std::endl;
+        std::cout << "financialProduct:" << +sdb.financialProduct() << std::endl;
+        std::cout << "numberOfDecimalsPrice:" << sdb.numberOfDecimalsPrice() << std::endl;
+        std::cout << "numberOfLegs:" << +sdb.numberOfLegs() << std::endl;
+        std::cout << "expirationDate:" << sdb.expirationDate() << std::endl;
+        std::cout << "putOrCall:" << +sdb.putOrCall() << std::endl;
+        std::cout << "===============================================================" << std::endl;
+    }
 }
 
 void SeriesDefinitionExtended(char *buf, uint16_t offset, uint16_t len)
 {
     XdpSeriesDefinitionExtented sde(buf, len, offset);
-    std::ofstream outfile("extended.txt", std::ios::app);
-    if ((sde.commodityCode() == 4002 || sde.commodityCode() == 4010) && sde.instrumentGroup() == 4)
+    if (trim(sde.symbol()) == "HSIV8")
     {
-        outfile << "orderbookId" << sde.orderbookId() << std::endl;
-        outfile << "symbol:" << sde.symbol() << std::endl;
-        outfile << "country" << +sde.country() << std::endl;
-        outfile << "market:" << +sde.market() << std::endl;
-        outfile << "instrumentGroup:" << +sde.instrumentGroup() << std::endl;
-        outfile << "modifier:" << +sde.modifier() << std::endl;
-        outfile << "commodityCode:" << sde.commodityCode() << std::endl;
-        outfile << "expirationDate:" << sde.expirationDate() << std::endl;
-        outfile << "strikePrice:" << sde.strikePrice() << std::endl;
-        outfile << "contractSize:" << +sde.contractSize() << std::endl;
-        outfile << "isinCode:" << sde.isinCode() << std::endl;
-        outfile << "seriesStatus:" << +sde.seriesStatus() << std::endl;
-        outfile << "effectiveTomorrow:" << +sde.effectiveTomorrow() << std::endl;
-        outfile << "priceQuotationFactor:" << sde.priceQuotationFactor() << std::endl;
-        outfile << "effectiveExpDate:" << sde.effectiveExpDate() << std::endl;
-        outfile << "dateTimeLastTrading:" << sde.dateTimeLastTrading() << std::endl;
-        outfile << "===============================================================" << std::endl;
+        std::cout << "orderbookId" << sde.orderbookId() << std::endl;
+        std::cout << "symbol:" << sde.symbol() << std::endl;
+        std::cout << "country" << +sde.country() << std::endl;
+        std::cout << "market:" << +sde.market() << std::endl;
+        std::cout << "instrumentGroup:" << +sde.instrumentGroup() << std::endl;
+        std::cout << "modifier:" << +sde.modifier() << std::endl;
+        std::cout << "commodityCode:" << sde.commodityCode() << std::endl;
+        std::cout << "expirationDate:" << sde.expirationDate() << std::endl;
+        std::cout << "strikePrice:" << sde.strikePrice() << std::endl;
+        std::cout << "contractSize:" << +sde.contractSize() << std::endl;
+        std::cout << "isinCode:" << sde.isinCode() << std::endl;
+        std::cout << "seriesStatus:" << +sde.seriesStatus() << std::endl;
+        std::cout << "effectiveTomorrow:" << +sde.effectiveTomorrow() << std::endl;
+        std::cout << "priceQuotationFactor:" << sde.priceQuotationFactor() << std::endl;
+        std::cout << "effectiveExpDate:" << sde.effectiveExpDate() << std::endl;
+        std::cout << "dateTimeLastTrading:" << sde.dateTimeLastTrading() << std::endl;
+        std::cout << "===============================================================" << std::endl;
     }
-    std::cout << "orderbookId" << sde.orderbookId() << std::endl;
-    std::cout << "symbol:" << sde.symbol() << std::endl;
-    std::cout << "country" << +sde.country() << std::endl;
-    std::cout << "market:" << +sde.market() << std::endl;
-    std::cout << "instrumentGroup:" << +sde.instrumentGroup() << std::endl;
-    std::cout << "modifier:" << +sde.modifier() << std::endl;
-    std::cout << "commodityCode:" << sde.commodityCode() << std::endl;
-    std::cout << "expirationDate:" << sde.expirationDate() << std::endl;
-    std::cout << "strikePrice:" << sde.strikePrice() << std::endl;
-    std::cout << "contractSize:" << +sde.contractSize() << std::endl;
-    std::cout << "isinCode:" << sde.isinCode() << std::endl;
-    std::cout << "seriesStatus:" << +sde.seriesStatus() << std::endl;
-    std::cout << "effectiveTomorrow:" << +sde.effectiveTomorrow() << std::endl;
-    std::cout << "priceQuotationFactor:" << sde.priceQuotationFactor() << std::endl;
-    std::cout << "effectiveExpDate:" << sde.effectiveExpDate() << std::endl;
-    std::cout << "dateTimeLastTrading:" << sde.dateTimeLastTrading() << std::endl;
-    std::cout << "===============================================================" << std::endl;
 }
 
 void ClassDefinition(char *buf, uint16_t offset, uint16_t len)
