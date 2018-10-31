@@ -44,6 +44,7 @@ typedef struct XdpMessageHeader
 } MessageHeader;
 void ProcessMessageHeader(char *buf, int msgCount, int id);
 void AddOrder(char *buf, uint16_t offset, uint16_t len);
+void DeleteOrder(char *buf, uint16_t offset, uint16_t len);
 void Trade(char *buf, uint16_t offset, uint16_t len);
 void CommodityDefinition(char *buf, uint16_t offset, uint16_t len, int id);
 void SeriesDefinitionExtended(char *buf, uint16_t offset, uint16_t len, int id);
@@ -110,13 +111,9 @@ int main(int argc, char *argv[])
             int port = ntohs(udph->dest);
             if (hdr->mMsgCount > 0)
             {
-                if (strcmp(ip, "239.1.127.128") == 0 && port == 51003)
+                if (strcmp(ip, "239.1.127.130") == 0 && port == 51002)
                 {
                     ProcessMessageHeader(msgPtr, hdr->mMsgCount, 1);
-                }
-                if (strcmp(ip, "239.1.127.153") == 0 && port == 51003)
-                {
-                    ProcessMessageHeader(msgPtr, hdr->mMsgCount, 2);
                 }
             }
         }
@@ -145,27 +142,31 @@ void ProcessMessageHeader(char *buf, int msgCount, int id)
     {
         MessageHeader *msghdr = (MessageHeader *)buf;
         // printf("msg %d: msgsize=%d, msgtype=%d\n", n, msghdr->mMsgSize, msghdr->mMsgType);
-        // if (msghdr->mMsgType == ADDORDER)
-        // {
-        //     AddOrder(buf, 4, msghdr->mMsgSize);
-        // }
-        // if (msghdr->mMsgType == TRADE)
-        // {
-        //     Trade(buf, 4, msghdr->mMsgSize);
-        // }
-
-        if (msghdr->mMsgType == COMMODITYDEFINITION)
+        if (msghdr->mMsgType == ADDORDER)
         {
-            CommodityDefinition(buf, 4, msghdr->mMsgSize, id);
+            AddOrder(buf, 4, msghdr->mMsgSize);
         }
+        if (msghdr->mMsgType == DELETEORDER)
+        {
+            DeleteOrder(buf, 4, msghdr->mMsgSize);
+        }
+        if (msghdr->mMsgType == TRADE)
+        {
+            Trade(buf, 4, msghdr->mMsgSize);
+        }
+
+        // if (msghdr->mMsgType == COMMODITYDEFINITION)
+        // {
+        //     CommodityDefinition(buf, 4, msghdr->mMsgSize, id);
+        // }
         // if (msghdr->mMsgType == CLASSDEFINITION)
         // {
         //     ClassDefinition(buf, 4, msghdr->mMsgSize);
         // }
-        if (msghdr->mMsgType == SERIESDEFINITIONEXTENDED)
-        {
-            SeriesDefinitionExtended(buf, 4, msghdr->mMsgSize, id);
-        }
+        // if (msghdr->mMsgType == SERIESDEFINITIONEXTENDED)
+        // {
+        //     SeriesDefinitionExtended(buf, 4, msghdr->mMsgSize, id);
+        // }
         // if (msghdr->mMsgType == SERIESDEFINITIONBASE)
         // {
         //     SeriesDefinitionBase(buf, 4, msghdr->mMsgSize);
@@ -179,35 +180,68 @@ void ProcessMessageHeader(char *buf, int msgCount, int id)
 
 void AddOrder(char *buf, uint16_t offset, uint16_t len)
 {
-    XdpAddModOrder addOrder(buf, len, offset);
-    // if (AddOrder.orderbookId() == 56102818)
-    // {
-    //     printf("OrderbookID:%u\n", addOrder.orderbookId());
-    //     printf("OrderID:%llu\n", addOrder.orderId());
-    //     printf("price:%d\n", addOrder.price());
-    //     printf("quantity:%u\n", addOrder.quantity());
-    //     printf("side:%hu\n", addOrder.side());
-    //     printf("lotType:%d\n", addOrder.lotType());
-    //     printf("OrderType:%d\n", addOrder.orderType());
-    //     printf("orderBookPosition:%u\n\n", addOrder.orderbookPosition());
-    // }
+    XdpAddOrder addOrder(buf, len, offset);
+    if (addOrder.orderbookId() == 56102818)
+    {
+        std::ofstream out("add-1.txt", std::ios::app);
+        out << "orderbookID:"
+            << addOrder.orderbookId() << std::endl;
+        out << "orderId:"
+            << addOrder.orderId() << std::endl;
+        out << "price:"
+            << addOrder.price() << std::endl;
+        out << "quantity:"
+            << addOrder.quantity() << std::endl;
+        out << "side:"
+            << +addOrder.side() << std::endl;
+        out << "lotType:"
+            << +addOrder.lotType() << std::endl;
+        out << "orderType:"
+            << addOrder.orderType() << std::endl;
+        out << "orderbookPosition:"
+            << addOrder.orderbookPosition() << std::endl;
+        out << "=====================================\n";
+        out.close();
+    }
+}
+void DeleteOrder(char *buf, uint16_t offset, uint16_t len)
+{
+    XdpDeleteOrder deleteOrder(buf, len, offset);
+    if (deleteOrder.orderbookId() == 56102818)
+    {
+        std::ofstream out("delete-1.txt", std::ios::app);
+        out << "orderbookID:"
+            << deleteOrder.orderbookId() << std::endl;
+        out << "orderId:"
+            << deleteOrder.orderId() << std::endl;
+        out << "side:"
+            << +deleteOrder.side() << std::endl;
+        out << "=====================================\n";
+
+        out.close();
+    }
 }
 
 void Trade(char *buf, uint16_t offset, uint16_t len)
 {
     XdpTrade trade(buf, len, offset);
 
-    printf("tradeTime:%u\n", trade.tradeTime());
-    printf("orderbookId:%u\n", trade.orderbookId());
-    printf("orderId:%llu\n", trade.orderId());
-    printf("tradeId:%llu\n", trade.tradeId());
-    printf("comboGroupId:%u\n", trade.comboGroupId());
-    printf("price:%d\n", trade.price());
-    printf("quantity:%u\n", trade.quantity());
-    printf("side:%hhu\n", trade.side());
-    printf("dealType:%hhu\n", trade.dealType());
-    printf("tradeCondition:%hu\n", trade.tradeCondition());
-    printf("dealInfo:%hu\n\n", trade.dealInfo());
+    if (trade.orderbookId() == 56102818)
+    {
+        std::ofstream out("trade-1.txt", std::ios::app);
+        out << "orderbookID:"
+            << trade.orderbookId() << std::endl;
+        out << "orderId:"
+            << trade.orderId() << std::endl;
+        out << "price:"
+            << trade.price() << std::endl;
+        out << "quantity:"
+            << trade.quantity() << std::endl;
+        out << "side:"
+            << +trade.side() << std::endl;
+        out << "=====================================\n";
+        out.close();
+    }
 }
 
 void CommodityDefinition(char *buf, uint16_t offset, uint16_t len, int id)

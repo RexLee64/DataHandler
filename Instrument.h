@@ -2,7 +2,8 @@
 #define INSTRUMENT_H
 #include <iostream>
 #include <vector>
-
+#include <string.h>
+#include "test.h"
 // 订单数据定义
 struct OrderData
 {
@@ -12,7 +13,6 @@ struct OrderData
     uint8_t lotType;    //0:Undefined, 1:Odd Lot, 2:Round Lot, 3:Block Lot, 4:All or None Lot
     uint16_t orderType; //0:Not applicable, 1:Force, 2:Short Sell, 4:Market Bid, 8:Price Stabilization, 16:Override Crossing
                         //32:Undisclosed, 1024:Fill-and-kill immediately, 2048:Firm color disabled, 4096:Convert to aggressive (if locked market), 8192:Bait/implied order
-    uint32_t orderBookPosition;
 };
 
 // 订单簿定义
@@ -37,10 +37,6 @@ class OrderBook
         memset(this->mBid, 0, sizeof(struct OrderData) * 2000);
         memset(this->mOffer, 0, sizeof(struct OrderData) * 2000);
     }
-    OrderBook(uint32_t orderBookId)
-    {
-        this->mOrderBookId = orderBookId;
-    }
     uint32_t getOrderBookId()
     {
         return this->mOrderBookId;
@@ -54,19 +50,21 @@ class OrderBook
     {
         return this->mOffer;
     }
-    void insertOrder(struct OrderData order, int side);
-    void modifyOrder(struct OrderData order, int side);
-    void deleteOrder(uint64_t orderId, int side);
-    void changePosition(struct OrderData, int side);
-    void increseQuantity(uint64_t orderId, uint32_t quantity, int side);
-    void reduceQuantity(uint64_t orderId, uint32_t quantity, int side);
+    //返回修改的位置, -1:未找到
+    int insertOrder(struct OrderData order, int orderBookPosition, int side);
+    int modifyOrder(struct OrderData order, int orderBookPosition, int side);
+    int deleteOrder(uint64_t orderId, int side);
+    int changePosition(struct OrderData, int orderBookPosition, int side);
+    int increseQuantity(uint64_t orderId, uint32_t quantity, int side);
+    int reduceQuantity(struct OrderData order, int side);
     void clearOrder();
+    void output();
 };
 
 class Instrument
 {
   private:
-    std::string mSymbol;
+    std::string mSymbol; 
     int mNumberOfDecimalsPrice;
     class OrderBook mOrderBook;
 
@@ -74,13 +72,16 @@ class Instrument
     Instrument() : mNumberOfDecimalsPrice(0) {}
     Instrument(std::string symbol, int numberOfDecimalsPrice, uint32_t orderBookId)
     {
-        this->mSymbol = symbol;
+        this->mSymbol = symbol; 
         this->mNumberOfDecimalsPrice = numberOfDecimalsPrice;
         mOrderBook.setOrderBookId(orderBookId);
     }
     std::string getSymbol() { return this->mSymbol; }
     int getNumberOfDecimalsPrice() { return this->mNumberOfDecimalsPrice; }
-    struct OrderBookData getStructOrderBook();
+    uint32_t getOrderBookId() { return this->mOrderBook.getOrderBookId(); }
+    int changeOrderBook(struct OrderData order, int orderBookPosition, int side, int style);
+    void getStructOrderBook(struct OrderBookData *orderBook);
+    void outputOrderBook();
 };
 
 #endif

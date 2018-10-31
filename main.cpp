@@ -25,7 +25,7 @@
 #include "OrderbookData.h"
 #include "TradeData.h"
 #include "ReferenceData.h"
-
+#include "Instrument.h"
 #define BUFF_SIZE 2048
 static const char *g_szIfName = "ens3f1np1"; // 网卡接口
 
@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
             int port = ntohs(udph->dest);
             if (hdr->mMsgCount > 0)
             {
-                if (strcmp(ip, "239.1.127.155") == 0 && port == 51002)
+                if (strcmp(ip, "239.1.127.130") == 0 && port == 51002)
                 {
                     // printf("PktSize:%hu,", hdr->mPktSize);
                     // printf("MsgCount:%hu,", hdr->mMsgCount);
@@ -149,47 +149,14 @@ void ProcessMessageHeader(char *buf, int msgCount)
     {
         MessageHeader *msghdr = (MessageHeader *)buf;
         // printf("msg %d: msgsize=%d, msgtype=%d\n", n, msghdr->mMsgSize, msghdr->mMsgType);
+        if (msghdr->mMsgType == SERIESDEFINITIONBASE)
+        {
+            SeriesDefinitionBase(buf, 4, msghdr->mMsgSize);
+        }
         if (msghdr->mMsgType == ADDORDER)
         {
             AddOrder(buf, 4, msghdr->mMsgSize);
         }
-        if (msghdr->mMsgType == DELETEORDER)
-        {
-            DeleteOrder(buf, 4, msghdr->mMsgSize);
-        }
-        if (msghdr->mMsgType == MODIFYORDER)
-        {
-            ModifyOrder(buf, 4, msghdr->mMsgSize);
-        }
-        if (msghdr->mMsgType == CLEARORDER)
-        {
-            ClearOrder(buf, 4, msghdr->mMsgSize);
-        }
-        // if (msghdr->mMsgType == TRADE)
-        // {
-        //     Trade(buf, 4, msghdr->mMsgSize);
-        // }
-        // if (msghdr->mMsgType == TRADEAMENDMENT)
-        // {
-        //     Trade(buf, 4, msghdr->mMsgSize);
-        // }
-
-        // if (msghdr->mMsgType == COMMODITYDEFINITION)
-        // {
-        //     CommodityDefinition(buf, 4, msghdr->mMsgSize);
-        // }
-        // if (msghdr->mMsgType == CLASSDEFINITION)
-        // {
-        //     ClassDefinition(buf, 4, msghdr->mMsgSize);
-        // }
-        // if (msghdr->mMsgType == SERIESDEFINITIONBASE)
-        // {
-        //     SeriesDefinitionBase(buf, 4, msghdr->mMsgSize);
-        // }
-        // if (msghdr->mMsgType == SERIESDEFINITIONEXTENDED)
-        // {
-        //     SeriesDefinitionExtended(buf, 4, msghdr->mMsgSize);
-        // }
         n++;
         buf = buf + msghdr->mMsgSize;
         size += msghdr->mMsgSize;
@@ -201,27 +168,31 @@ void AddOrder(char *buf, uint16_t offset, uint16_t len)
 {
     XdpAddOrder addOrder(buf, len, offset);
 
-    if (addOrder.orderbookId() == 56102818)
+    if (addOrder.orderbookId() == 21368738)
     {
-        std::ofstream out("add.txt", std::ios::app);
-        out << "orderbookID:"
-            << addOrder.orderbookId() << std::endl;
-        out << "orderId:"
-            << addOrder.orderId() << std::endl;
-        out << "price:"
-            << addOrder.price() << std::endl;
-        out << "quantity:"
-            << addOrder.quantity() << std::endl;
-        out << "side:"
-            << +addOrder.side() << std::endl;
-        out << "lotType:"
-            << +addOrder.lotType() << std::endl;
-        out << "orderType:"
-            << addOrder.orderType() << std::endl;
-        out << "orderbookPosition:"
-            << addOrder.orderbookPosition() << std::endl;
-        out << "=====================================\n";
-        out.close();
+        struct OrderData order;
+        std::cout << "add," << addOrder.orderbookPosition() << ", " /*<< ret*/ << "," << order.price << "," << order.quantity << std::endl;
+
+        // std::ofstream out("add.txt", std::ios::app);
+        std::cout << "orderbookID:"
+                  << addOrder.orderbookId() << std::endl;
+        std::cout << "orderId:"
+                  << addOrder.orderId() << std::endl;
+        std::cout << "price:"
+                  << addOrder.price() << std::endl;
+        std::cout << "quantity:"
+                  << addOrder.quantity() << std::endl;
+        std::cout << "side:"
+                  << +addOrder.side() << std::endl;
+        std::cout << "lotType:"
+                  << +addOrder.lotType() << std::endl;
+        std::cout << "orderType:"
+                  << addOrder.orderType() << std::endl;
+        std::cout << "orderbookPosition:"
+                  << addOrder.orderbookPosition() << std::endl;
+        std::cout << "=====================================\n";
+        // out << "=====================================\n";
+        // out.close();
     }
 }
 
@@ -335,7 +306,7 @@ void CommodityDefinition(char *buf, uint16_t offset, uint16_t len)
 void SeriesDefinitionBase(char *buf, uint16_t offset, uint16_t len)
 {
     XdpSeriesDefinitionBase sdb(buf, len, offset);
-    if (trim(sdb.symbol()) == "HSIV8")
+    if (trim(sdb.symbol()) == "HSIX8")
     {
         std::cout << "orderbookId:" << sdb.orderbookId() << std::endl;
         std::cout << "symbol:" << sdb.symbol() << std::endl;
