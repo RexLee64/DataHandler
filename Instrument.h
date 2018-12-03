@@ -9,6 +9,7 @@
 struct AddOrderData
 {
     char name[20];
+    uint64_t serverTime;
     uint64_t orderId;
     int32_t price;
     uint32_t quantity;
@@ -23,6 +24,7 @@ struct AddOrderData
 struct TradeData
 {
     char name[20];
+    uint64_t serverTime;
     uint64_t orderId; // 0: If Not Available
     int32_t price;
     uint64_t tradeId;
@@ -51,6 +53,7 @@ struct OrderData
 struct OrderBookData
 {
     char name[20];
+    uint64_t serverTime;
     struct OrderData bid[10];
     struct OrderData offer[10];
 };
