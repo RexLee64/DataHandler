@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
             int port = ntohs(udph->dest);
             if (hdr->mMsgCount > 0)
             {
-                if (strcmp(ip, "239.1.127.130") == 0 && port == 51002)
+                if (strcmp(ip, "239.1.127.153") == 0 && port == 51002)
                 {
                     // printf("PktSize:%hu,", hdr->mPktSize);
                     // printf("MsgCount:%hu,", hdr->mMsgCount);
@@ -153,10 +153,10 @@ void ProcessMessageHeader(char *buf, int msgCount)
         {
             SeriesDefinitionBase(buf, 4, msghdr->mMsgSize);
         }
-        if (msghdr->mMsgType == ADDORDER)
-        {
-            AddOrder(buf, 4, msghdr->mMsgSize);
-        }
+        // if (msghdr->mMsgType == ADDORDER)
+        // {
+        //     AddOrder(buf, 4, msghdr->mMsgSize);
+        // }
         n++;
         buf = buf + msghdr->mMsgSize;
         size += msghdr->mMsgSize;
@@ -306,7 +306,7 @@ void CommodityDefinition(char *buf, uint16_t offset, uint16_t len)
 void SeriesDefinitionBase(char *buf, uint16_t offset, uint16_t len)
 {
     XdpSeriesDefinitionBase sdb(buf, len, offset);
-    if (trim(sdb.symbol()) == "HSIX8")
+    if (trim(sdb.symbol()) == "HSIZ8")
     {
         std::cout << "orderbookId:" << sdb.orderbookId() << std::endl;
         std::cout << "symbol:" << sdb.symbol() << std::endl;

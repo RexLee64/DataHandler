@@ -15,7 +15,7 @@
 #include <linux/if_packet.h>
 #include <netinet/if_ether.h>
 #include <iostream>
-#include<fstream>  
+#include <fstream>
 #include "test.h"
 #include "OrderbookData.h"
 #include "TradeData.h"
@@ -23,6 +23,13 @@
 #include "MsgQueue.h"
 
 #define BUFF_SIZE 4096
+#define ADDR "172.21.2.1"
+// #define ADDR "127.0.0.1"
+#define PORT_1 26666 // 前10档订单簿数据
+#define PORT_2 26667 // 逐笔委托增量数据
+#define PORT_3 26668 // 逐笔委托快照数据
+#define PORT_4 26669 // 逐笔成交增量数据
+
 static const char *g_szIfName = "ens3f1np1";                    // 网卡接口
 pthread_mutex_t thread_error_mutex = PTHREAD_MUTEX_INITIALIZER; // 错误文件锁
 msgQueue q;                                                     // 消息队列
@@ -42,8 +49,8 @@ typedef struct XdpMessageHeader
     unsigned short mMsgType;
 } MessageHeader;
 
-void ProcessMessageHeader(char *buf, int msgCount, Instrument *ins);
-void ProcessSnapshot(char *buf, int msgCount, Instrument *ins);
+void ProcessMessageHeader(char *buf, int msgCount, Instrument *ins, int ob_fd, struct sockaddr_in addr1, int ord_fd, struct sockaddr_in addr3, int tr_fd, struct sockaddr_in addr4);
+void ProcessSnapshot(char *buf, int msgCount, Instrument *ins, int os_fd, struct sockaddr_in addr2);
 std::string trim(std::string s);
 void out(struct OrderBookData ob);
 void *procData(void *arg);
@@ -146,8 +153,72 @@ void *procData(void *arg)
         struct iphdr *iph;
         struct udphdr *udph;
         Instrument ins("HSIX8", 0, 21368738);
-        uint32_t preNum221 = 0;    // channel 221
-        uint32_t preNum721 =0;// channel 721
+        uint32_t preNum221 = 0; // channel 221
+        uint32_t preNum721 = 0; // channel 721
+
+        // udp
+        int ob_fd;  // orderbook socket
+        int os_fd;  // order snapshot
+        int ord_fd; // order
+        int tr_fd;  // trade
+
+        struct sockaddr_in addr1, addr2, addr3, addr4;
+        if ((ob_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+        {
+            perror("socket");
+            exit(1);
+        }
+        if ((os_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+        {
+            perror("socket");
+            exit(1);
+        }
+        if ((ord_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+        {
+            perror("socket");
+            exit(1);
+        }
+        if ((tr_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+        {
+            perror("socket");
+            exit(1);
+        }
+        addr1.sin_family = AF_INET;
+        addr1.sin_port = htons(PORT_1);
+        addr1.sin_addr.s_addr = inet_addr(ADDR);
+        if (addr1.sin_addr.s_addr == INADDR_NONE)
+        {
+            printf("Incorrect ip address!");
+            close(ob_fd);
+            exit(1);
+        }
+        addr2.sin_family = AF_INET;
+        addr2.sin_port = htons(PORT_2);
+        addr2.sin_addr.s_addr = inet_addr(ADDR);
+        if (addr2.sin_addr.s_addr == INADDR_NONE)
+        {
+            printf("Incorrect ip address!");
+            close(ob_fd);
+            exit(1);
+        }
+        addr3.sin_family = AF_INET;
+        addr3.sin_port = htons(PORT_3);
+        addr3.sin_addr.s_addr = inet_addr(ADDR);
+        if (addr2.sin_addr.s_addr == INADDR_NONE)
+        {
+            printf("Incorrect ip address!");
+            close(ob_fd);
+            exit(1);
+        }
+        addr4.sin_family = AF_INET;
+        addr4.sin_port = htons(PORT_4);
+        addr4.sin_addr.s_addr = inet_addr(ADDR);
+        if (addr4.sin_addr.s_addr == INADDR_NONE)
+        {
+            printf("Incorrect ip address!");
+            close(ob_fd);
+            exit(1);
+        }
 
         while (1)
         {
@@ -177,7 +248,7 @@ void *procData(void *arg)
                     {
                         if (preNum221 == 0 || preNum221 == hdr->mSeqNum)
                         {
-                            ProcessMessageHeader(msgPtr, hdr->mMsgCount, &ins);
+                            ProcessMessageHeader(msgPtr, hdr->mMsgCount, &ins, ob_fd, addr1, ord_fd, addr2, tr_fd, addr4);
                             preNum221 = hdr->mSeqNum + hdr->mMsgCount;
                         }
                     }
@@ -185,14 +256,17 @@ void *procData(void *arg)
                     {
                         if (preNum721 == 0 || preNum721 == hdr->mSeqNum)
                         {
-                            printf("%d,%d\n",hdr->mSeqNum,hdr->mMsgCount);
-                            ProcessSnapshot(msgPtr, hdr->mMsgCount, &ins);
+                            ProcessSnapshot(msgPtr, hdr->mMsgCount, &ins, os_fd, addr3);
                             preNum721 = hdr->mSeqNum + hdr->mMsgCount;
                         }
                     }
                 }
             }
         }
+        close(ob_fd);
+        close(os_fd);
+        close(ord_fd);
+        close(tr_fd);
     }
     catch (std::exception &e)
     {
@@ -222,12 +296,12 @@ std::string trim(std::string s)
     return s;
 }
 
-void ProcessMessageHeader(char *buf, int msgCount, Instrument *ins)
+void ProcessMessageHeader(char *buf, int msgCount, Instrument *ins, int ob_fd, struct sockaddr_in addr1, int ord_fd, struct sockaddr_in addr2, int tr_fd, struct sockaddr_in addr4)
 {
     int n = 0;
-    int size = 0; 
+    int size = 0;
     // printf("msgcount %d\n", msgCount);
-    std::ofstream outfile("/app/hkex/file/orderbook.txt", std::ios::app);
+    // std::ofstream outfile("/app/hkex/file/orderbook.txt", std::ios::app);
     while (n < msgCount)
     {
         MessageHeader *msghdr = (MessageHeader *)buf;
@@ -246,32 +320,60 @@ void ProcessMessageHeader(char *buf, int msgCount, Instrument *ins)
                 order.orderType = addOrder.orderType();
                 int ret = ins->changeOrderBook(order, addOrder.orderbookPosition(), addOrder.side(), ADDORDER);
 
-                if (ret >= 1 && ret <= 10)
+                // 发送逐笔委托增量数据
+                struct AddOrderData ord;
+                strcpy(ord.name, ins->getSymbol().c_str());
+                ord.orderId = addOrder.orderId();
+                ord.price = addOrder.price();
+                ord.side = addOrder.side();
+                ord.quantity = addOrder.quantity();
+                ord.lotType = addOrder.lotType();
+                ord.orderType = addOrder.orderType();
+                ord.orderbookPosition = addOrder.orderbookPosition();
+                int n = sendto(ord_fd, (char *)&ord, sizeof(ord), 0, (struct sockaddr *)&addr2, sizeof(addr2));
+                if (n < 0)
                 {
-                    printf("add,%d,%d,%d,%u,%lld\n", ret, addOrder.side(), addOrder.price(), addOrder.quantity(), addOrder.orderId());
-                    struct OrderBookData orderBook;
-                    ins->getStructOrderBook(&orderBook);
-                    outfile << "add," << ret << ","
-                            << +addOrder.side() << ","
-                            << addOrder.price() << ","
-                            << addOrder.quantity() << ","
-                            << addOrder.orderId()
-                            << std::endl;
-                    out(orderBook);
-                    // ins->outputOrderBook();
+                    perror("ord sendto");
+                    close(ord_fd);
                 }
 
-                std::ofstream addOrderFile("/app/hkex/file/addOrder.txt", std::ios::app);
-                addOrderFile << "orderbookId=" << addOrder.orderbookId()
-                             << ",orderId=" << addOrder.orderId()
-                             << ",side=" << +addOrder.side()
-                             << ",orderbookposition=" << addOrder.orderbookPosition()
-                             << ",price=" << addOrder.price()
-                             << ",quantity=" << addOrder.quantity()
-                             << ",lotType=" << +addOrder.lotType()
-                             << ",orderType=" << addOrder.orderType()
-                             << std::endl;
-                addOrderFile.close();
+                if (ret >= 1 && ret <= 10)
+                { 
+                    struct OrderBookData orderBook;
+                    ins->getStructOrderBook(&orderBook);
+                    // 发送订单簿
+                    int n = sendto(ob_fd, (char *)&orderBook, sizeof(orderBook), 0, (struct sockaddr *)&addr1, sizeof(addr1));
+                    if (n < 0)
+                    {
+                        perror("ob sendto");
+                        close(ob_fd);
+                    }
+                    // 输出订单本
+                    // out(orderBook);
+
+                    // 存储订单本数据
+                    // outfile << "add," << ret << ","
+                    //         << +addOrder.side() << ","
+                    //         << addOrder.price() << ","
+                    //         << addOrder.quantity() << ","
+                    //         << addOrder.orderId()
+                    //         << std::endl;
+                }
+                // 输出逐笔委托
+                // printf("add,%d,%d,%d,%u,%lld\n", ret, addOrder.side(), addOrder.price(), addOrder.quantity(), addOrder.orderId());
+
+                // 存储逐笔委托数据
+                // std::ofstream addOrderFile("/app/hkex/file/addOrder.txt", std::ios::app);
+                // addOrderFile << "orderbookId=" << addOrder.orderbookId()
+                //              << ",orderId=" << addOrder.orderId()
+                //              << ",side=" << +addOrder.side()
+                //              << ",orderbookposition=" << addOrder.orderbookPosition()
+                //              << ",price=" << addOrder.price()
+                //              << ",quantity=" << addOrder.quantity()
+                //              << ",lotType=" << +addOrder.lotType()
+                //              << ",orderType=" << addOrder.orderType()
+                //              << std::endl;
+                // addOrderFile.close();
             }
         }
         if (msghdr->mMsgType == DELETEORDER)
@@ -284,15 +386,28 @@ void ProcessMessageHeader(char *buf, int msgCount, Instrument *ins)
                 int ret = ins->changeOrderBook(order, 0, deleteOrder.side(), DELETEORDER);
 
                 if (ret >= 1 && ret <= 10)
-                // if (ret == 10)
                 {
-                    printf("delete,%d,%llu\n", ret, deleteOrder.orderId());
+
                     struct OrderBookData orderBook;
                     ins->getStructOrderBook(&orderBook);
-                    outfile << "delete," << ret << "," << deleteOrder.orderId() << std::endl;
-                    out(orderBook);
+                    // 发送订单簿
+                    int n = sendto(ob_fd, (char *)&orderBook, sizeof(orderBook), 0, (struct sockaddr *)&addr1, sizeof(addr1));
+                    if (n < 0)
+                    {
+                        perror("ob sendto");
+                        close(ob_fd);
+                    }
+
+                    // 输出
+                    // out(orderBook);
                     // ins->outputOrderBook();
+
+                    // 存储订单本
+                    // outfile << "delete," << ret << "," << deleteOrder.orderId() << std::endl;
                 }
+
+                // 输出删除订单数据
+                // printf("delete,%d,%llu\n", ret, deleteOrder.orderId());
             }
         }
         if (msghdr->mMsgType == MODIFYORDER)
@@ -309,13 +424,24 @@ void ProcessMessageHeader(char *buf, int msgCount, Instrument *ins)
 
                 if (ret >= 1 && ret <= 10)
                 {
-                    printf("modify,%d\n", ret);
+                    // 发送订单簿
                     struct OrderBookData orderBook;
                     ins->getStructOrderBook(&orderBook);
-                    outfile << "modify," << ret << std::endl;
-                    out(orderBook);
+                    int n = sendto(ob_fd, (char *)&orderBook, sizeof(orderBook), 0, (struct sockaddr *)&addr1, sizeof(addr1));
+                    if (n < 0)
+                    {
+                        perror("ob sendto");
+                        close(ob_fd);
+                    }
+
+                    // 输出订单簿
+                    // out(orderBook);
                     // ins->outputOrderBook();
+
+                    // 存储订单簿
+                    // outfile << "modify," << ret << std::endl;
                 }
+                // printf("modify,%d\n", ret);
             }
         }
         if (msghdr->mMsgType == CLEARORDER)
@@ -326,7 +452,7 @@ void ProcessMessageHeader(char *buf, int msgCount, Instrument *ins)
                 struct OrderData order;
                 ins->changeOrderBook(order, 0, 0, CLEARORDER);
                 printf("clear\n");
-                outfile << "clear\n";
+                // outfile << "clear\n";
             }
         }
         if (msghdr->mMsgType == TRADE)
@@ -334,6 +460,27 @@ void ProcessMessageHeader(char *buf, int msgCount, Instrument *ins)
             XdpTrade trade(buf, msghdr->mMsgSize, 4);
             if (trade.orderbookId() == ins->getOrderBookId())
             {
+                // 发送成交数据
+                struct TradeData tr;
+                strcpy(tr.name, ins->getSymbol().c_str());
+                tr.orderId = trade.orderId();
+                tr.tradeId = trade.tradeId();
+                tr.price = trade.price();
+                tr.quantity = trade.quantity();
+                tr.comboGroupId = trade.comboGroupId();
+                tr.side = trade.side();
+                tr.dealType = trade.dealType();
+                tr.tradeCondition = trade.tradeCondition();
+                tr.dealInfo = trade.dealInfo();
+                tr.tradeTime = trade.tradeTime();
+                int n = sendto(tr_fd, (char *)&tr, sizeof(tr), 0, (struct sockaddr *)&addr4, sizeof(addr4));
+                if (n < 0)
+                {
+                    perror("tr sendto");
+                    close(tr_fd);
+                }
+
+                // 订单簿处理
                 struct OrderData order;
                 order.orderId = trade.orderId();
                 order.price = trade.price();
@@ -342,28 +489,42 @@ void ProcessMessageHeader(char *buf, int msgCount, Instrument *ins)
 
                 if (ret >= 1 && ret <= 10)
                 {
-                    printf("trade,%d,%d,%d,%u,%lld\n", ret, trade.side(), trade.price(), trade.quantity(), trade.orderId());
                     struct OrderBookData orderBook;
                     ins->getStructOrderBook(&orderBook);
+                    // 发送订单簿
+                    int n = sendto(ob_fd, (char *)&orderBook, sizeof(orderBook), 0, (struct sockaddr *)&addr1, sizeof(addr1));
+                    if (n < 0)
+                    {
+                        perror("ob sendto");
+                        close(ob_fd);
+                    }
+
+                    // 输出订单簿
+                    // out(orderBook);
                     // ins->outputOrderBook();
-                    outfile << "trade," << ret << "," << +trade.side() << "," << trade.price() << "," << trade.quantity() << "," << trade.orderId() << std::endl;
-                    out(orderBook);
+                    // outfile << "trade," << ret << "," << +trade.side() << "," << trade.price() << "," << trade.quantity() << "," << trade.orderId() << std::endl;
+
+                    //
                 }
 
-                std::ofstream tradeFile("/app/hkex/file/trade.txt", std::ios::app);
-                tradeFile << "tradeTime=" << trade.tradeTime()
-                          << ",orderbookId=" << trade.orderbookId()
-                          << ",orderId=" << trade.orderId()
-                          << ",tradeId=" << trade.tradeId()
-                          << ",side=" << trade.side()
-                          << ",price=" << trade.price()
-                          << ",quantity=" << trade.quantity()
-                          << ",comboGroupId=" << trade.comboGroupId()
-                          << ",dealType=" << +trade.dealType()
-                          << ",tradeCondition=" << trade.tradeCondition()
-                          << ",dealInfo=" << trade.dealInfo()
-                          << std::endl;
-                tradeFile.close();
+                // 输出逐笔成交
+                // printf("trade,%d,%d,%d,%u,%lld\n", ret, trade.side(), trade.price(), trade.quantity(), trade.orderId());
+
+                // 存储逐笔成交数据
+                // std::ofstream tradeFile("/app/hkex/file/trade.txt", std::ios::app);
+                // tradeFile << "tradeTime=" << trade.tradeTime()
+                //           << ",orderbookId=" << trade.orderbookId()
+                //           << ",orderId=" << trade.orderId()
+                //           << ",tradeId=" << trade.tradeId()
+                //           << ",side=" << +trade.side()
+                //           << ",price=" << trade.price()
+                //           << ",quantity=" << trade.quantity()
+                //           << ",comboGroupId=" << trade.comboGroupId()
+                //           << ",dealType=" << +trade.dealType()
+                //           << ",tradeCondition=" << trade.tradeCondition()
+                //           << ",dealInfo=" << trade.dealInfo()
+                //           << std::endl;
+                // tradeFile.close();
             }
         }
 
@@ -371,10 +532,10 @@ void ProcessMessageHeader(char *buf, int msgCount, Instrument *ins)
         buf = buf + msghdr->mMsgSize;
         size += msghdr->mMsgSize;
     }
-    outfile.close();
+    // outfile.close();
 }
 
-void ProcessSnapshot(char *buf, int msgCount, Instrument *ins)
+void ProcessSnapshot(char *buf, int msgCount, Instrument *ins, int os_fd, struct sockaddr_in addr3)
 {
     int n = 0;
     int size = 0;
@@ -388,26 +549,43 @@ void ProcessSnapshot(char *buf, int msgCount, Instrument *ins)
 
             if (addOrder.orderbookId() == ins->getOrderBookId())
             {
-                printf("%u\n",ins->getOrderBookId());
-                std::ofstream addSnapFile("/app/hkex/file/addOrder-snapshot.txt", std::ios::app);
-                addSnapFile << "orderbookID:"
-                            << addOrder.orderbookId() << std::endl;
-                addSnapFile << "orderId:"
-                            << addOrder.orderId() << std::endl;
-                addSnapFile << "price:"
-                            << addOrder.price() << std::endl;
-                addSnapFile << "quantity:"
-                            << addOrder.quantity() << std::endl;
-                addSnapFile << "side:"
-                            << +addOrder.side() << std::endl;
-                addSnapFile << "lotType:"
-                            << +addOrder.lotType() << std::endl;
-                addSnapFile << "orderType:"
-                            << addOrder.orderType() << std::endl;
-                addSnapFile << "orderbookPosition:"
-                          << addOrder.orderbookPosition() << std::endl;
-                addSnapFile << "=====================================\n";
-                addSnapFile.close();
+                struct AddOrderData os;
+                strcpy(os.name, ins->getSymbol().c_str());
+                os.orderId = addOrder.orderId();
+                os.price = addOrder.price();
+                os.quantity = addOrder.quantity();
+                os.lotType = addOrder.lotType();
+                os.orderType = addOrder.orderType();
+                os.side = addOrder.side();
+                os.orderbookPosition = addOrder.orderbookPosition();
+                // 发送逐笔委托快照数据
+                int n = sendto(os_fd, (char *)&os, sizeof(os), 0, (struct sockaddr *)&addr3, sizeof(addr3));
+                if (n < 0)
+                {
+                    perror("os sendto");
+                    close(os_fd);
+                }
+
+                // 存储逐笔委托快照数据
+                // std::ofstream addSnapFile("/app/hkex/file/addOrder-snapshot.txt", std::ios::app);
+                // addSnapFile << "orderbookID:"
+                //             << addOrder.orderbookId() << std::endl;
+                // addSnapFile << "orderId:"
+                //             << addOrder.orderId() << std::endl;
+                // addSnapFile << "price:"
+                //             << addOrder.price() << std::endl;
+                // addSnapFile << "quantity:"
+                //             << addOrder.quantity() << std::endl;
+                // addSnapFile << "side:"
+                //             << +addOrder.side() << std::endl;
+                // addSnapFile << "lotType:"
+                //             << +addOrder.lotType() << std::endl;
+                // addSnapFile << "orderType:"
+                //             << addOrder.orderType() << std::endl;
+                // addSnapFile << "orderbookPosition:"
+                //             << addOrder.orderbookPosition() << std::endl;
+                // addSnapFile << "=====================================\n";
+                // addSnapFile.close();
             }
         }
 
@@ -422,10 +600,10 @@ void out(const struct OrderBookData orderBook)
     std::ofstream outfile("/app/hkex/file/orderbook.txt", std::ios::app);
     for (int i = 0; i < 10; i++)
     {
-        outfile << "pos  " << i + 11;
-        outfile << orderBook.bid[i].orderId << "," << orderBook.bid[i].price << "," << orderBook.bid[i].quantity << " || ";
-        outfile << "pos  " << i + 11;
-        outfile << orderBook.offer[i].orderId << "," << orderBook.offer[i].price << "," << orderBook.offer[i].quantity << std::endl;
+        outfile << "pos  " << i + 1;
+        outfile << "  " << orderBook.bid[i].orderId << "," << orderBook.bid[i].price << "," << orderBook.bid[i].quantity << " || ";
+        outfile << "pos  " << i + 1;
+        outfile << "  " << orderBook.offer[i].orderId << "," << orderBook.offer[i].price << "," << orderBook.offer[i].quantity << std::endl;
     }
     outfile << "===================================================================\n";
     outfile.close();
