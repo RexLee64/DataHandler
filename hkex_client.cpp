@@ -25,6 +25,7 @@ struct OrderData
 struct OrderBookData
 {
     char name[20];
+    uint64_t serverTime;
     struct OrderData bid[10];
     struct OrderData offer[10];
 };
@@ -33,6 +34,7 @@ struct OrderBookData
 struct AddOrderData
 {
     char name[20];
+    uint64_t serverTime;
     uint64_t orderId;
     int32_t price;
     uint32_t quantity;
@@ -47,6 +49,7 @@ struct AddOrderData
 struct TradeData
 {
     char name[20];
+    uint64_t serverTime;
     uint64_t orderId; // 0: If Not Available
     int32_t price;
     uint64_t tradeId;
@@ -71,7 +74,7 @@ int main(int argc, char *argv[])
         exit(1);
     }
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(26668);
+    addr.sin_port = htons(26667);
     // addr.sin_addr.s_addr = inet_addr(ADDR);
     addr.sin_addr.s_addr=htonl(INADDR_ANY);
 
@@ -112,7 +115,7 @@ int main(int argc, char *argv[])
             //buff[n] = 0;
 
             struct AddOrderData addOrder = *(struct AddOrderData*)buff;
-            printf("add,%s,%lld,%d,%d,%u,%d,%u,%hu\n",addOrder.name, addOrder.orderId,addOrder.side, addOrder.price, addOrder.quantity, addOrder.lotType,addOrder.orderType,addOrder.orderbookPosition);
+            printf("%llu:add,%s,%lld,%d,%d,%u,%d,%u,%hu\n",addOrder.serverTime,addOrder.name, addOrder.orderId,addOrder.side, addOrder.price, addOrder.quantity, addOrder.lotType,addOrder.orderType,addOrder.orderbookPosition);
             
             // struct TradeData tr = *(struct TradeData*)buff; 
             // printf("trade-%s,%llu,%llu,%d,%llu,",tr.name,tr.orderId,tr.tradeId,tr.price,tr.quantity);
@@ -130,8 +133,7 @@ int main(int argc, char *argv[])
             close(sock);
             break;
         } 
-
-        break;
+ 
     }
     close(sock);
     

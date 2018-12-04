@@ -6,7 +6,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include "Instrument.h"
+#include "ClientInstruments.h"
 
 class Storage
 {
@@ -16,7 +16,7 @@ class Storage
 
   public:
     Storage() {}
-    void Open(std::string filename, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out)
+    void Open(std::string filename, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out)
     {
         this->filename = filename;
         this->out.open(filename, mode);
@@ -33,7 +33,7 @@ class Storage
 
         return ret;
     }
-    void Close() { out.close(); }
+    void Close() { this->out.close(); }
     // virtual int Write() = 0;
 };
 
@@ -42,11 +42,58 @@ class StorageOrderBook : public Storage
 {
   public:
     StorageOrderBook() {}
-    int Write(struct OrderBookData orderBook, uint64_t clientTime)
+    int Write(char *path, struct OrderBookData orderBook, uint64_t clientTime)
     {
+        char filename[40];
+        sprintf(filename, "%s/%s_orderbook.csv", path, orderBook.name);
+        this->Open(filename, std::ios::app);
         // 初次创建文件，写入头
         if (IsNull())
         {
+            out << "Symbol"
+                << ",";
+            for (int i = 1; i < 10; i++)
+            {
+                out << "BuyOrderId0" << i << ","
+                    << "BuyPrice0" << i << ","
+                    << "BuyQuantity0" << i << ","
+                    << "BuyLotType0" << i << ","
+                    << "BuyOrderType0" << i << ",";
+            }
+            out << "BuyOrderId10"
+                << ","
+                << "BuyPrice10"
+                << ","
+                << "BuyQuantity10"
+                << ","
+                << "BuyLotType10"
+                << ","
+                << "BuyOrderType10"
+                << ",";
+            for (int i = 1; i < 11; i++)
+            {
+                out << "SellOrderId0" << i << ","
+                    << "SellPrice0" << i << ","
+                    << "SellQuantity0" << i << ","
+                    << "SellLotType0" << i << ","
+                    << "SellOrderType0" << i << ",";
+            }
+            out << "SellOrderId10"
+                << ","
+                << "SellPrice10"
+                << ","
+                << "SellQuantity10"
+                << ","
+                << "SellLotType10"
+                << ","
+                << "SellOrderType10"
+                << ",";
+            out << "ServerTime"
+                << ","
+                << "ClientTime" << std::endl;
+            out << "ServerTime"
+                << ","
+                << "ClientTime\n";
         }
 
         out << orderBook.name << ",";
@@ -68,6 +115,7 @@ class StorageOrderBook : public Storage
         }
         out << orderBook.serverTime << ","
             << clientTime << std::endl;
+        this->Close();
     }
 };
 
@@ -76,12 +124,33 @@ class StorageOrder : public Storage
 {
   public:
     StorageOrder() {}
-    int Write(struct AddOrderData order, uint64_t clientTime)
+    int Write(char *path, struct AddOrderData order, uint64_t clientTime)
     {
+        char filename[40];
+        sprintf(filename, "%s/%s_order.csv", path, order.name);
+        this->Open(filename, std::ios::app);
         // 初次创建文件，写入头
         if (IsNull())
         {
-            
+            out << "Symbol"
+                << ","
+                << "OrderId"
+                << ","
+                << "Price"
+                << ","
+                << "Quantity"
+                << ","
+                << "side"
+                << ","
+                << "LotType"
+                << ","
+                << "OrderType"
+                << ","
+                << "OrderBookPosition"
+                << ","
+                << "ServerTime"
+                << ","
+                << "ClientTime\n";
         }
         out << order.name << ","
             << order.orderId << ","
@@ -93,6 +162,7 @@ class StorageOrder : public Storage
             << order.orderbookPosition << ","
             << order.serverTime << ","
             << clientTime << std::endl;
+        this->Close();
     }
 };
 
@@ -101,11 +171,39 @@ class StorageTrade : public Storage
 {
   public:
     StorageTrade() {}
-    int Write(struct TradeData trade, uint64_t clientTime)
+    int Write(char *path, struct TradeData trade, uint64_t clientTime)
     {
+        char filename[40];
+        sprintf(filename, "%s/%s_trade.csv", path, trade.name);
+        this->Open(filename, std::ios::app);
         // 初次创建文件，写入头
         if (IsNull())
         {
+            out << "Symbol"
+                << ","
+                << "OrderId"
+                << ","
+                << "TradeId"
+                << ","
+                << "TradeTime"
+                << ","
+                << "Price"
+                << ","
+                << "Quantity"
+                << ","
+                << "Side"
+                << ","
+                << "ComboGroupId"
+                << ","
+                << "TradeCondition"
+                << ","
+                << "DealType"
+                << ","
+                << "DealInfo"
+                << ","
+                << "ServerTime"
+                << ","
+                << "ClientTime\n";
         }
         out << trade.name << ","
             << trade.orderId << ","
@@ -120,44 +218,8 @@ class StorageTrade : public Storage
             << trade.dealInfo << ","
             << trade.serverTime << ","
             << clientTime << std::endl;
+        this->Close();
     }
 };
-
-// 文件夹创建
-// 创建文件夹 yyyymmdd , base_path: 文件所放目录
-void createDir(char *date, const char *base_path, char *file_path, char *log_file = "cme.log")
-{
-    char year[5], month[3], day[3];
-    substring(date, year, 0, 4);
-    substring(date, month, 4, 6);
-    substring(date, day, 6, 8);
-
-    char path_1[15], path_2[20], path_3[25];
-    sprintf(path_1, "%s/%s", base_path, year);
-    sprintf(path_2, "%s/%s", path_1, month);
-    sprintf(path_3, "%s/%s", path_2, day);
-
-    FILE *fp = fopen(log_file, "a+");
-
-    if (access(path_1, F_OK) != 0) // 成功执行时，返回0。失败返回-1
-    {
-        if (mkdir(path_1, 0777) == 0)
-            fprintf(fp, "create %s\n", path_1);
-    }
-    if (access(path_2, F_OK) != 0) // 成功执行时，返回0。失败返回-1
-    {
-        if (mkdir(path_2, 0777) == 0)
-            fprintf(fp, "create %s\n", path_2);
-    }
-    if (access(path_3, F_OK) != 0) // 成功执行时，返回0。失败返回-1
-    {
-        if (mkdir(path_3, 0777) == 0)
-            fprintf(fp, "create %s\n", path_3);
-    }
-
-    sprintf(file_path, "%s", path_3);
-
-    fclose(fp);
-}
 
 #endif

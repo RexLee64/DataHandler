@@ -49,8 +49,8 @@ typedef struct XdpMessageHeader
     unsigned short mMsgType;
 } MessageHeader;
 
-void ProcessMessageHeader(char *buf, int msgCount, Instrument *ins, int ob_fd, struct sockaddr_in addr1, int ord_fd, struct sockaddr_in addr3, int tr_fd, struct sockaddr_in addr4);
-void ProcessSnapshot(char *buf, int msgCount, Instrument *ins, int os_fd, struct sockaddr_in addr2);
+void ProcessMessageHeader(char *buf, int msgCount, uint64_t serverTime, Instrument *ins, int len, int ob_fd, struct sockaddr_in addr1, int ord_fd, struct sockaddr_in addr3, int tr_fd, struct sockaddr_in addr4);
+void ProcessSnapshot(char *buf, int msgCount, Instrument *ins, int len, int os_fd, struct sockaddr_in addr2);
 std::string trim(std::string s);
 void out(struct OrderBookData ob);
 void *procData(void *arg);
@@ -152,7 +152,13 @@ void *procData(void *arg)
         struct ethhdr *eth;
         struct iphdr *iph;
         struct udphdr *udph;
-        Instrument ins("HSIX8", 0, 21368738);
+
+        int len = 2;
+        Instrument insArray[2] = {
+            Instrument("HSIZ8", 0, 76484514),
+            Instrument("HSIF9", 0, 60755874),
+        };
+        // Instrument ins("HSIZ8", 0, 76484514);
         uint32_t preNum221 = 0; // channel 221
         uint32_t preNum721 = 0; // channel 721
 
@@ -248,7 +254,7 @@ void *procData(void *arg)
                     {
                         if (preNum221 == 0 || preNum221 == hdr->mSeqNum)
                         {
-                            ProcessMessageHeader(msgPtr, hdr->mMsgCount, &ins, ob_fd, addr1, ord_fd, addr2, tr_fd, addr4);
+                            ProcessMessageHeader(msgPtr, hdr->mMsgCount, hdr->mSendTime, insArray, len, ob_fd, addr1, ord_fd, addr2, tr_fd, addr4);
                             preNum221 = hdr->mSeqNum + hdr->mMsgCount;
                         }
                     }
@@ -256,7 +262,7 @@ void *procData(void *arg)
                     {
                         if (preNum721 == 0 || preNum721 == hdr->mSeqNum)
                         {
-                            ProcessSnapshot(msgPtr, hdr->mMsgCount, &ins, os_fd, addr3);
+                            ProcessSnapshot(msgPtr, hdr->mMsgCount, insArray, len, os_fd, addr3);
                             preNum721 = hdr->mSeqNum + hdr->mMsgCount;
                         }
                     }
@@ -296,7 +302,7 @@ std::string trim(std::string s)
     return s;
 }
 
-void ProcessMessageHeader(char *buf, int msgCount, Instrument *ins, int ob_fd, struct sockaddr_in addr1, int ord_fd, struct sockaddr_in addr2, int tr_fd, struct sockaddr_in addr4)
+void ProcessMessageHeader(char *buf, int msgCount, uint64_t serverTime, Instrument *ins, int len, int ob_fd, struct sockaddr_in addr1, int ord_fd, struct sockaddr_in addr2, int tr_fd, struct sockaddr_in addr4)
 {
     int n = 0;
     int size = 0;
@@ -323,6 +329,7 @@ void ProcessMessageHeader(char *buf, int msgCount, Instrument *ins, int ob_fd, s
                 // 发送逐笔委托增量数据
                 struct AddOrderData ord;
                 strcpy(ord.name, ins->getSymbol().c_str());
+                ord.serverTime = serverTime;
                 ord.orderId = addOrder.orderId();
                 ord.price = addOrder.price();
                 ord.side = addOrder.side();
@@ -338,9 +345,10 @@ void ProcessMessageHeader(char *buf, int msgCount, Instrument *ins, int ob_fd, s
                 }
 
                 if (ret >= 1 && ret <= 10)
-                { 
+                {
                     struct OrderBookData orderBook;
                     ins->getStructOrderBook(&orderBook);
+                    orderBook.serverTime = serverTime;
                     // 发送订单簿
                     int n = sendto(ob_fd, (char *)&orderBook, sizeof(orderBook), 0, (struct sockaddr *)&addr1, sizeof(addr1));
                     if (n < 0)
@@ -390,6 +398,7 @@ void ProcessMessageHeader(char *buf, int msgCount, Instrument *ins, int ob_fd, s
 
                     struct OrderBookData orderBook;
                     ins->getStructOrderBook(&orderBook);
+                    orderBook.serverTime = serverTime;
                     // 发送订单簿
                     int n = sendto(ob_fd, (char *)&orderBook, sizeof(orderBook), 0, (struct sockaddr *)&addr1, sizeof(addr1));
                     if (n < 0)
@@ -427,6 +436,7 @@ void ProcessMessageHeader(char *buf, int msgCount, Instrument *ins, int ob_fd, s
                     // 发送订单簿
                     struct OrderBookData orderBook;
                     ins->getStructOrderBook(&orderBook);
+                    orderBook.serverTime = serverTime;
                     int n = sendto(ob_fd, (char *)&orderBook, sizeof(orderBook), 0, (struct sockaddr *)&addr1, sizeof(addr1));
                     if (n < 0)
                     {
@@ -463,6 +473,7 @@ void ProcessMessageHeader(char *buf, int msgCount, Instrument *ins, int ob_fd, s
                 // 发送成交数据
                 struct TradeData tr;
                 strcpy(tr.name, ins->getSymbol().c_str());
+                tr.serverTime = serverTime;
                 tr.orderId = trade.orderId();
                 tr.tradeId = trade.tradeId();
                 tr.price = trade.price();
@@ -535,7 +546,7 @@ void ProcessMessageHeader(char *buf, int msgCount, Instrument *ins, int ob_fd, s
     // outfile.close();
 }
 
-void ProcessSnapshot(char *buf, int msgCount, Instrument *ins, int os_fd, struct sockaddr_in addr3)
+void ProcessSnapshot(char *buf, int msgCount, Instrument *ins, int len, int os_fd, struct sockaddr_in addr3)
 {
     int n = 0;
     int size = 0;

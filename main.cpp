@@ -306,8 +306,19 @@ void CommodityDefinition(char *buf, uint16_t offset, uint16_t len)
 void SeriesDefinitionBase(char *buf, uint16_t offset, uint16_t len)
 {
     XdpSeriesDefinitionBase sdb(buf, len, offset);
-    if (trim(sdb.symbol()) == "HSIZ8")
+    // if (trim(sdb.symbol()) == "HSIZ8" || trim(sdb.symbol()) == "HSIG9" || trim(sdb.symbol()) == "HSIF9")
+
+    std::string symbol = trim(sdb.symbol());
+    if (symbol.substr(0, 3) == "HSI" && symbol.size() == 5 || (symbol.substr(0, 3) == "MHI" && symbol.size() == 5))
     {
+        std::ofstream out("hkex.cfg", std::ios::app);
+        out << trim(sdb.symbol()) << ","
+            << sdb.orderbookId() << ","
+            << sdb.numberOfDecimalsPrice() << ","
+            << sdb.expirationDate() << ","
+            << +sdb.numberOfLegs() << ","
+            << +sdb.putOrCall() << std::endl;
+        out.close();
         std::cout << "orderbookId:" << sdb.orderbookId() << std::endl;
         std::cout << "symbol:" << sdb.symbol() << std::endl;
         std::cout << "financialProduct:" << +sdb.financialProduct() << std::endl;
